@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard · Harborview{% endblock %}
+
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Student dashboard</p>
+      <h1>{{ greeting }}, {{ student.full_name.split()[0] }}.</h1>
+      <p class="lede">Here is your event board and the account the office has on file.</p>
+    </div>
+    <a class="button button-secondary" href="{{ url_for('student.records') }}">My login history</a>
+  </div>
+
+  <section class="dashboard-grid">
+    <article class="info-card">
+      <h2>Your details</h2>
+      <dl class="detail-list">
+        <dt>Name</dt><dd>{{ student.full_name }}</dd>
+        <dt>Student ID</dt><dd>{{ student.student_id }}</dd>
+        <dt>Email</dt><dd>{{ student.email }}</dd>
+        <dt>Department</dt><dd>{{ student.department }}</dd>
+        <dt>Year</dt><dd>{{ student.year_level }}</dd>
+        <dt>Joined</dt><dd>{{ student.created_at }}</dd>
+        <dt>Sign-ins</dt><dd>{{ login_count }}</dd>
+        <dt>Last success</dt><dd>{{ last_login }}</dd>
+      </dl>
+    </article>
+
+    <article class="panel">
+      <p class="eyebrow">Announcements</p>
+      <h2>Coming up</h2>
+      <ul class="event-list">
+        {% for event in events %}
+          <li>
+            <p class="event-date">{{ event.event_date }} · {{ event.location }}</p>
+            <h3>{{ event.title }}</h3>
+            <p>{{ event.description }}</p>
+          </li>
+        {% else %}
+          <li><p>The event office has not posted anything yet.</p></li>
+        {% endfor %}
+      </ul>
+    </article>
+  </section>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}My logins · Harborview{% endblock %}
+
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">{{ student.student_id }}</p>
+      <h1>My login history</h1>
+      <p class="lede">These are your own attempts. You can read them, and the event office is the only group that can change them.</p>
+    </div>
+  </div>
+
+  {% if records %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Result</th>
+            <th>IP address</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in records %}
+            <tr>
+              <td>{{ record.created_at }}</td>
+              <td>
+                {% if record.status == "success" %}
+                  <span class="badge badge-ok">Successful</span>
+                {% else %}
+                  <span class="badge badge-bad">Failed</span>
+                {% endif %}
+              </td>
+              <td>{{ record.ip_address or "—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <nav class="pager">
+      <span>{{ total }} record{{ "" if total == 1 else "s" }} · page {{ page }} of {{ pages }}</span>
+      <span class="button-row">
+        {% if page > 1 %}
+          <a class="button button-ghost button-small" href="{{ url_for('student.records', page=page-1) }}">Previous</a>
+        {% endif %}
+        {% if page < pages %}
+          <a class="button button-small" href="{{ url_for('student.records', page=page+1) }}">Next</a>
+        {% endif %}
+      </span>
+    </nav>
+  {% else %}
+    <p class="empty">No login attempts are stored for your account yet.</p>
+  {% endif %}
+{% endblock %}
