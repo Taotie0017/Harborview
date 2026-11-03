@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Harborview Student Events{% endblock %}</title>
+  <meta name="description" content="Sign in to the Harborview University student event office.">
+  <link rel="icon" href="{{ url_for('static', filename='images/mark.svg') }}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,680&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#content">Skip to content</a>
+  {% block header %}{% endblock %}
+  {% block main %}
+    <main id="content">
+      {% include "partials/flashes.html" %}
+      {% block content %}{% endblock %}
+    </main>
+  {% endblock %}
+  {% block footer %}
+    <footer class="site-footer">
+      <p>Harborview University Student Event Office</p>
+      <p>A course project for student login and event notices. Not an official campus portal.</p>
+    </footer>
+  {% endblock %}
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

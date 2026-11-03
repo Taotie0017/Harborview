@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Sign up · Harborview{% endblock %}
+{% block body_class %}page-auth{% endblock %}
+
+{% block content %}
+  <section class="auth-layout">
+    <div class="auth-card">
+      <p class="eyebrow">New student</p>
+      <h1>Create your account</h1>
+      <p class="lede">This is only for students. The event office creates admin accounts separately.</p>
+      {% if errors and errors.form %}
+        <p class="form-error">{{ errors.form }}</p>
+      {% endif %}
+      <form class="stack-form" method="post" action="{{ url_for('public.signup') }}" data-validate="signup">
+        {% if csrf_token is defined %}
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% endif %}
+
+        <label for="full_name">Full name</label>
+        <input id="full_name" name="full_name" type="text" autocomplete="name" required maxlength="80" value="{{ values.full_name if values is defined and values else '' }}">
+        {% if errors and errors.full_name %}<p class="field-error" data-for="full_name">{{ errors.full_name }}</p>{% else %}<p class="field-error" data-for="full_name"></p>{% endif %}
+
+        <label for="student_id">Student ID</label>
+        <input id="student_id" name="student_id" type="text" required minlength="4" maxlength="20" value="{{ values.student_id if values is defined and values else '' }}" placeholder="HV-10231">
+        {% if errors and errors.student_id %}<p class="field-error" data-for="student_id">{{ errors.student_id }}</p>{% else %}<p class="field-error" data-for="student_id"></p>{% endif %}
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" required maxlength="120" value="{{ values.email if values is defined and values else '' }}">
+        {% if errors and errors.email %}<p class="field-error" data-for="email">{{ errors.email }}</p>{% else %}<p class="field-error" data-for="email"></p>{% endif %}
+
+        <label for="department">Department</label>
+        <select id="department" name="department" required>
+          <option value="">Select a department</option>
+          {% for item in ["Computer Science", "Engineering", "Business", "Arts and Design", "Education", "Nursing", "Science"] %}
+            <option value="{{ item }}" {% if values is defined and values and values.department == item %}selected{% endif %}>{{ item }}</option>
+          {% endfor %}
+        </select>
+        {% if errors and errors.department %}<p class="field-error">{{ errors.department }}</p>{% endif %}
+
+        <label for="year_level">Year level</label>
+        <select id="year_level" name="year_level" required>
+          <option value="">Select a year</option>
+          {% for item in ["1st Year", "2nd Year", "3rd Year", "4th Year", "Graduate"] %}
+            <option value="{{ item }}" {% if values is defined and values and values.year_level == item %}selected{% endif %}>{{ item }}</option>
+          {% endfor %}
+        </select>
+        {% if errors and errors.year_level %}<p class="field-error">{{ errors.year_level }}</p>{% endif %}
+
+        <label for="password">Password</label>
+        <div class="password-field">
+          <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128">
+          <button class="ghost" type="button" data-toggle-password="password">Show</button>
+        </div>
+        <p class="field-error" data-for="password">{% if errors and errors.password %}{{ errors.password }}{% endif %}</p>
+
+        <label for="confirm_password">Confirm password</label>
+        <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required maxlength="128">
+        <p class="field-error" data-for="confirm_password">{% if errors and errors.confirm_password %}{{ errors.confirm_password }}{% endif %}</p>
+
+        <button class="button" type="submit">Create account</button>
+      </form>
+      <p class="form-note">Already registered? <a href="{{ url_for('public.login') }}">Log in</a></p>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/forms.js') }}"></script>
+{% endblock %}

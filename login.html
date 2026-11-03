@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Student login · Harborview{% endblock %}
+{% block body_class %}page-auth{% endblock %}
+
+{% block content %}
+  <section class="auth-layout">
+    <div class="auth-card">
+      <p class="eyebrow">Students</p>
+      <h1>Log in</h1>
+      <p class="lede">Use the student ID or email from your registration.</p>
+      {% if errors and errors.form %}
+        <p class="form-error">{{ errors.form }}</p>
+      {% endif %}
+      <form class="stack-form" method="post" action="{{ url_for('public.login') }}" data-validate="login">
+        {% if csrf_token is defined %}
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% endif %}
+        <label for="identifier">Student ID or email</label>
+        <input id="identifier" name="identifier" type="text" autocomplete="username" required maxlength="120" value="{{ identifier or '' }}">
+        {% if errors and errors.identifier %}<p class="field-error">{{ errors.identifier }}</p>{% endif %}
+
+        <label for="password">Password</label>
+        <div class="password-field">
+          <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128">
+          <button class="ghost" type="button" data-toggle-password="password">Show</button>
+        </div>
+        {% if errors and errors.password %}<p class="field-error">{{ errors.password }}</p>{% endif %}
+
+        <button class="button" type="submit">Log in</button>
+      </form>
+      <p class="form-note">Need an account? <a href="{{ url_for('public.signup') }}">Sign up</a></p>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/forms.js') }}"></script>
+{% endblock %}
