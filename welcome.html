@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Harborview Student Events{% endblock %}
+{% block body_class %}page-home{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Student Event Office</p>
+      <h1>Campus events, with a login that stays on record.</h1>
+      <p class="lede">
+        Students sign up once, check announcements, and look back at their own
+        login history. The event office uses a separate admin account to manage
+        registrations and records.
+      </p>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('public.login') }}">Student Login</a>
+        <a class="button button-secondary" href="{{ url_for('public.signup') }}">Create an account</a>
+        <a class="button button-ghost" href="{{ url_for('admin.login') }}">Admin Login</a>
+      </div>
+    </div>
+    <aside class="hero-panel">
+      <p class="eyebrow">On the board</p>
+      <h2>This month at Harborview</h2>
+      <ul class="event-list">
+        {% for event in events %}
+          <li>
+            <p class="event-date">{{ event.event_date }} · {{ event.location }}</p>
+            <h3>{{ event.title }}</h3>
+            <p>{{ event.description }}</p>
+          </li>
+        {% else %}
+          <li><p>No events posted yet.</p></li>
+        {% endfor %}
+      </ul>
+    </aside>
+  </section>
+
+  <section class="action-grid">
+    <article class="action-card">
+      <h2>Students</h2>
+      <p>Register with your student ID, then sign in to read notices and your personal login history.</p>
+      <a href="{{ url_for('public.signup') }}">Sign up</a>
+    </article>
+    <article class="action-card">
+      <h2>Already registered</h2>
+      <p>Use the same student ID or the email you signed up with. Failed tries are stored too.</p>
+      <a href="{{ url_for('public.login') }}">Go to login</a>
+    </article>
+    <article class="action-card">
+      <h2>Event office</h2>
+      <p>Administrators have a different login. Student accounts cannot open those pages.</p>
+      <a href="{{ url_for('admin.login') }}">Admin login</a>
+    </article>
+  </section>
+
+  <section class="steps">
+    <h2>How a student uses it</h2>
+    <ol>
+      <li>Create an account with your name, ID, department, and year.</li>
+      <li>Log in and read what the event office posted.</li>
+      <li>Open My Logins if you want the times you signed in from this site.</li>
+    </ol>
+  </section>
+{% endblock %}
