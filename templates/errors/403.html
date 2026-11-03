@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Not allowed · Harborview{% endblock %}
+
+{% block content %}
+  <section class="auth-layout">
+    <div class="auth-card">
+      <p class="eyebrow">403</p>
+      <h1>You can’t open this page.</h1>
+      <p class="lede">{{ description or "Your account does not have access to this area." }}</p>
+      <a class="button" href="{{ url_for('public.welcome') }}">Back home</a>
+    </div>
+  </section>
+{% endblock %}
