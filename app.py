@@ -13,7 +13,12 @@ csrf = CSRFProtect()
 
 
 def create_app(test_config=None):
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        static_folder=None if os.environ.get("VERCEL") else "public/static",
+    )
+    if app.static_folder is None:
+        app.add_url_rule("/static/<path:filename>", endpoint="static", build_only=True)
     app.config.from_object(Config)
     if test_config:
         app.config.update(test_config)
