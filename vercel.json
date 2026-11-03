@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "vercel_app.py": {
+    "api/index.py": {
       "includeFiles": "templates/**"
     }
   }
