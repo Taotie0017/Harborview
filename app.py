@@ -90,9 +90,13 @@ def create_app(test_config=None):
 
 
 def main():
-    app = create_app()
+    application = create_app()
     port = int(os.environ.get("PORT", "5000"))
-    app.run(host="127.0.0.1", port=port, debug=app.config["DEBUG"])
+    application.run(host="127.0.0.1", port=port, debug=application.config["DEBUG"])
+
+
+if os.environ.get("VERCEL"):
+    app = create_app()
 
 
 if __name__ == "__main__":
