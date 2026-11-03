@@ -1,0 +1,78 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin overview · Harborview{% endblock %}
+
+{% block admin_content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Event office</p>
+      <h1>Overview</h1>
+      <p class="lede">Signed in as {{ admin.full_name }}. Counts update from the student and login tables.</p>
+    </div>
+  </div>
+
+  <section class="stat-grid">
+    <article class="stat"><span>Registered students</span><strong>{{ stats.students }}</strong></article>
+    <article class="stat"><span>Active accounts</span><strong>{{ stats.active }}</strong></article>
+    <article class="stat"><span>Successful logins</span><strong>{{ stats.success }}</strong></article>
+    <article class="stat"><span>Failed logins</span><strong>{{ stats.failed }}</strong></article>
+    <article class="stat"><span>Attempts today</span><strong>{{ stats.today }}</strong></article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="panel">
+      <h2>Newest students</h2>
+      {% if recent_students %}
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>Name</th><th>Student ID</th><th>Department</th><th>Joined</th></tr>
+            </thead>
+            <tbody>
+              {% for student in recent_students %}
+                <tr>
+                  <td>{{ student.full_name }}</td>
+                  <td>{{ student.student_id }}</td>
+                  <td>{{ student.department }}</td>
+                  <td>{{ student.created_at }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty">No students have registered yet.</p>
+      {% endif %}
+    </article>
+
+    <article class="panel">
+      <h2>Latest login attempts</h2>
+      {% if recent_records %}
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>When</th><th>Student</th><th>Result</th></tr>
+            </thead>
+            <tbody>
+              {% for record in recent_records %}
+                <tr>
+                  <td>{{ record.created_at }}</td>
+                  <td>{{ record.student_name }}<br><small>{{ record.attempted_identifier }}</small></td>
+                  <td>
+                    {% if record.status == "success" %}
+                      <span class="badge badge-ok">Successful</span>
+                    {% else %}
+                      <span class="badge badge-bad">Failed</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty">No login attempts yet.</p>
+      {% endif %}
+    </article>
+  </section>
+{% endblock %}

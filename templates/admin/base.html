@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}
+
+{% block main %}
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <a class="side-brand" href="{{ url_for('admin.dashboard') }}">
+        <img src="{{ url_for('static', filename='images/mark.svg') }}" alt="" width="36" height="36">
+        <span>
+          <strong>Event office</strong><br>
+          <small>{{ current_name }}</small>
+        </span>
+      </a>
+      <nav class="side-nav">
+        <a class="side-link {% if request.endpoint == 'admin.dashboard' %}is-active{% endif %}" href="{{ url_for('admin.dashboard') }}">Overview</a>
+        <a class="side-link {% if request.endpoint in ['admin.students', 'admin.edit_student'] %}is-active{% endif %}" href="{{ url_for('admin.students') }}">Students</a>
+        <a class="side-link {% if request.endpoint in ['admin.records', 'admin.edit_record'] %}is-active{% endif %}" href="{{ url_for('admin.records') }}">Login records</a>
+        <a class="side-link {% if request.endpoint in ['admin.events', 'admin.new_event', 'admin.edit_event'] %}is-active{% endif %}" href="{{ url_for('admin.events') }}">Events</a>
+        <a class="side-link {% if request.endpoint == 'admin.audit' %}is-active{% endif %}" href="{{ url_for('admin.audit') }}">Audit log</a>
+      </nav>
+      <form class="inline-form" method="post" action="{{ url_for('public.logout') }}" style="margin-top: 1.4rem;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="button button-ghost button-small" type="submit">Log out</button>
+      </form>
+    </aside>
+    <div class="admin-main" id="content">
+      {% include "partials/flashes.html" %}
+      {% block admin_content %}{% endblock %}
+    </div>
+  </div>
+{% endblock %}

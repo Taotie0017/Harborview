@@ -1,0 +1,61 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Edit student · Harborview{% endblock %}
+
+{% block admin_content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">{{ student.student_id }}</p>
+      <h1>Edit student</h1>
+    </div>
+    <a class="button button-ghost" href="{{ url_for('admin.students') }}">Back to students</a>
+  </div>
+
+  <article class="panel">
+    {% if errors.form %}<p class="form-error">{{ errors.form }}</p>{% endif %}
+    <form class="stack-form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <label for="full_name">Full name</label>
+      <input id="full_name" name="full_name" required maxlength="80" value="{{ values.full_name }}">
+      {% if errors.full_name %}<p class="field-error">{{ errors.full_name }}</p>{% endif %}
+
+      <label for="student_id">Student ID</label>
+      <input id="student_id" name="student_id" required maxlength="20" value="{{ values.student_id }}">
+      {% if errors.student_id %}<p class="field-error">{{ errors.student_id }}</p>{% endif %}
+
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required maxlength="120" value="{{ values.email }}">
+      {% if errors.email %}<p class="field-error">{{ errors.email }}</p>{% endif %}
+
+      <label for="department">Department</label>
+      <select id="department" name="department" required>
+        {% for item in departments %}
+          <option value="{{ item }}" {% if values.department == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+      {% if errors.department %}<p class="field-error">{{ errors.department }}</p>{% endif %}
+
+      <label for="year_level">Year level</label>
+      <select id="year_level" name="year_level" required>
+        {% for item in year_levels %}
+          <option value="{{ item }}" {% if values.year_level == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+      {% if errors.year_level %}<p class="field-error">{{ errors.year_level }}</p>{% endif %}
+
+      <label for="is_active">Account status</label>
+      <select id="is_active" name="is_active">
+        <option value="1" {% if values.is_active == 1 %}selected{% endif %}>Active</option>
+        <option value="0" {% if values.is_active == 0 %}selected{% endif %}>Inactive</option>
+      </select>
+      {% if errors.is_active %}<p class="field-error">{{ errors.is_active }}</p>{% endif %}
+
+      <label for="new_password">New password</label>
+      <input id="new_password" name="new_password" type="password" maxlength="128" autocomplete="new-password" placeholder="Leave blank to keep the current password">
+      {% if errors.new_password %}<p class="field-error">{{ errors.new_password }}</p>{% endif %}
+
+      <button class="button" type="submit">Save changes</button>
+    </form>
+  </article>
+{% endblock %}

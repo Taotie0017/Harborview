@@ -1,0 +1,106 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Students · Harborview{% endblock %}
+
+{% block admin_content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Accounts</p>
+      <h1>Registered students</h1>
+      <p class="lede">Search the list, then edit or remove an account. Removing a student does not erase the name saved on old login rows.</p>
+    </div>
+  </div>
+
+  <form class="filters" method="get">
+    <div>
+      <label for="q">Search</label>
+      <input id="q" name="q" value="{{ filters.q }}" placeholder="Name, email, or ID">
+    </div>
+    <div>
+      <label for="department">Department</label>
+      <select id="department" name="department">
+        <option value="">All</option>
+        {% for item in departments %}
+          <option value="{{ item }}" {% if filters.department == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="year_level">Year</label>
+      <select id="year_level" name="year_level">
+        <option value="">All</option>
+        {% for item in year_levels %}
+          <option value="{{ item }}" {% if filters.year_level == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="active">Status</label>
+      <select id="active" name="active">
+        <option value="">All</option>
+        <option value="1" {% if filters.active == "1" %}selected{% endif %}>Active</option>
+        <option value="0" {% if filters.active == "0" %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="button button-small" type="submit">Filter</button>
+      <a class="button button-ghost button-small" href="{{ url_for('admin.students') }}">Reset</a>
+    </div>
+  </form>
+
+  {% if students %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Student ID</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Year</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+            <tr>
+              <td>{{ student.full_name }}</td>
+              <td>{{ student.student_id }}</td>
+              <td>{{ student.email }}</td>
+              <td>{{ student.department }}</td>
+              <td>{{ student.year_level }}</td>
+              <td>
+                {% if student.is_active %}
+                  <span class="badge badge-ok">Active</span>
+                {% else %}
+                  <span class="badge badge-off">Inactive</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('admin.edit_student', student_id=student.id) }}">Edit</a>
+                <form class="inline-form" method="post" action="{{ url_for('admin.delete_student', student_id=student.id) }}" data-confirm="Delete {{ student.full_name }}? Their account will be removed.">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="button button-danger button-small" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <nav class="pager">
+      <span>{{ total }} student{{ "" if total == 1 else "s" }} · page {{ page }} of {{ pages }}</span>
+      <span class="button-row">
+        {% if page > 1 %}
+          <a class="button button-ghost button-small" href="{{ url_for('admin.students', page=page-1, q=filters.q, department=filters.department, year_level=filters.year_level, active=filters.active) }}">Previous</a>
+        {% endif %}
+        {% if page < pages %}
+          <a class="button button-small" href="{{ url_for('admin.students', page=page+1, q=filters.q, department=filters.department, year_level=filters.year_level, active=filters.active) }}">Next</a>
+        {% endif %}
+      </span>
+    </nav>
+  {% else %}
+    <p class="empty">No students match those filters.</p>
+  {% endif %}
+{% endblock %}

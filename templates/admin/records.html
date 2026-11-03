@@ -1,0 +1,96 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Login records · Harborview{% endblock %}
+
+{% block admin_content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">History</p>
+      <h1>Login records</h1>
+      <p class="lede">Every student attempt is stored here, including failed ones. You can correct a row or delete it.</p>
+    </div>
+  </div>
+
+  <form class="filters" method="get">
+    <div>
+      <label for="q">Search</label>
+      <input id="q" name="q" value="{{ filters.q }}" placeholder="Name, ID, or email">
+    </div>
+    <div>
+      <label for="status">Result</label>
+      <select id="status" name="status">
+        <option value="">All</option>
+        <option value="success" {% if filters.status == "success" %}selected{% endif %}>Successful</option>
+        <option value="failed" {% if filters.status == "failed" %}selected{% endif %}>Failed</option>
+      </select>
+    </div>
+    <div>
+      <label for="date_from">From</label>
+      <input id="date_from" name="date_from" type="date" value="{{ filters.date_from }}">
+    </div>
+    <div>
+      <label for="date_to">To</label>
+      <input id="date_to" name="date_to" type="date" value="{{ filters.date_to }}">
+    </div>
+    <div class="filter-actions">
+      <button class="button button-small" type="submit">Filter</button>
+      <a class="button button-ghost button-small" href="{{ url_for('admin.records') }}">Reset</a>
+    </div>
+  </form>
+
+  {% if records %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Student</th>
+            <th>Tried</th>
+            <th>Result</th>
+            <th>IP</th>
+            <th>Note</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in records %}
+            <tr>
+              <td>{{ record.created_at }}</td>
+              <td>{{ record.display_name }}<br><small>{{ record.display_code }}</small></td>
+              <td>{{ record.attempted_identifier }}</td>
+              <td>
+                {% if record.status == "success" %}
+                  <span class="badge badge-ok">Successful</span>
+                {% else %}
+                  <span class="badge badge-bad">Failed</span>
+                {% endif %}
+              </td>
+              <td>{{ record.ip_address or "—" }}</td>
+              <td>{{ record.note or "—" }}</td>
+              <td>
+                <a href="{{ url_for('admin.edit_record', record_id=record.id) }}">Edit</a>
+                <form class="inline-form" method="post" action="{{ url_for('admin.delete_record', record_id=record.id) }}" data-confirm="Delete this login record? This cannot be undone.">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="button button-danger button-small" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <nav class="pager">
+      <span>{{ total }} record{{ "" if total == 1 else "s" }} · page {{ page }} of {{ pages }}</span>
+      <span class="button-row">
+        {% if page > 1 %}
+          <a class="button button-ghost button-small" href="{{ url_for('admin.records', page=page-1, q=filters.q, status=filters.status, date_from=filters.date_from, date_to=filters.date_to) }}">Previous</a>
+        {% endif %}
+        {% if page < pages %}
+          <a class="button button-small" href="{{ url_for('admin.records', page=page+1, q=filters.q, status=filters.status, date_from=filters.date_from, date_to=filters.date_to) }}">Next</a>
+        {% endif %}
+      </span>
+    </nav>
+  {% else %}
+    <p class="empty">No login attempts match those filters.</p>
+  {% endif %}
+{% endblock %}

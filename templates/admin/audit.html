@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Audit log · Harborview{% endblock %}
+
+{% block admin_content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Office activity</p>
+      <h1>Audit log</h1>
+      <p class="lede">This list is written by the server when an administrator signs in or changes a record.</p>
+    </div>
+  </div>
+
+  {% if logs %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Admin</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+            <tr>
+              <td>{{ log.created_at }}</td>
+              <td>{{ log.admin_name }}</td>
+              <td>{{ log.action }}</td>
+              <td>{{ log.target_table }}{% if log.target_id %} #{{ log.target_id }}{% endif %}</td>
+              <td>{{ log.details }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <nav class="pager">
+      <span>{{ total }} {{ "entry" if total == 1 else "entries" }} · page {{ page }} of {{ pages }}</span>
+      <span class="button-row">
+        {% if page > 1 %}
+          <a class="button button-ghost button-small" href="{{ url_for('admin.audit', page=page-1) }}">Previous</a>
+        {% endif %}
+        {% if page < pages %}
+          <a class="button button-small" href="{{ url_for('admin.audit', page=page+1) }}">Next</a>
+        {% endif %}
+      </span>
+    </nav>
+  {% else %}
+    <p class="empty">No administrator actions have been recorded yet.</p>
+  {% endif %}
+{% endblock %}

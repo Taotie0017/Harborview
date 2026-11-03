@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ "Edit event" if event else "New event" }} · Harborview{% endblock %}
+
+{% block admin_content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Announcement</p>
+      <h1>{{ "Edit event" if event else "Post an event" }}</h1>
+    </div>
+    <a class="button button-ghost" href="{{ url_for('admin.events') }}">Back to events</a>
+  </div>
+
+  <article class="panel">
+    <form class="stack-form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <label for="title">Title</label>
+      <input id="title" name="title" required maxlength="120" value="{{ values.title or '' }}">
+      {% if errors.title %}<p class="field-error">{{ errors.title }}</p>{% endif %}
+
+      <label for="event_date">Date and time</label>
+      <input id="event_date" name="event_date" type="datetime-local" required value="{{ (values.event_date or '')|replace(' ', 'T') }}">
+      {% if errors.event_date %}<p class="field-error">{{ errors.event_date }}</p>{% endif %}
+
+      <label for="location">Location</label>
+      <input id="location" name="location" required maxlength="120" value="{{ values.location or '' }}">
+      {% if errors.location %}<p class="field-error">{{ errors.location }}</p>{% endif %}
+
+      <label for="description">Description</label>
+      <textarea id="description" name="description" required maxlength="1000">{{ values.description or '' }}</textarea>
+      {% if errors.description %}<p class="field-error">{{ errors.description }}</p>{% endif %}
+
+      <button class="button" type="submit">{{ "Save event" if event else "Post event" }}</button>
+    </form>
+  </article>
+{% endblock %}

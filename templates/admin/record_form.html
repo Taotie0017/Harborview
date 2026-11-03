@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Edit login record · Harborview{% endblock %}
+
+{% block admin_content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">{{ record.created_at }}</p>
+      <h1>Edit login record</h1>
+    </div>
+    <a class="button button-ghost" href="{{ url_for('admin.records') }}">Back to records</a>
+  </div>
+
+  <article class="panel">
+    <dl class="detail-list">
+      <dt>Student</dt><dd>{{ record.display_name }}</dd>
+      <dt>ID on file</dt><dd>{{ record.display_code or "—" }}</dd>
+      <dt>Typed</dt><dd>{{ record.attempted_identifier }}</dd>
+      <dt>IP address</dt><dd>{{ record.ip_address or "—" }}</dd>
+      <dt>Browser</dt><dd>{{ record.user_agent or "—" }}</dd>
+    </dl>
+    <form class="stack-form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="status">Result</label>
+      <select id="status" name="status">
+        <option value="success" {% if values.status == "success" %}selected{% endif %}>Successful</option>
+        <option value="failed" {% if values.status == "failed" %}selected{% endif %}>Failed</option>
+      </select>
+      {% if errors.status %}<p class="field-error">{{ errors.status }}</p>{% endif %}
+
+      <label for="note">Note</label>
+      <textarea id="note" name="note" maxlength="500">{{ values.note }}</textarea>
+      {% if errors.note %}<p class="field-error">{{ errors.note }}</p>{% endif %}
+
+      <button class="button" type="submit">Save record</button>
+    </form>
+  </article>
+{% endblock %}
