@@ -12,10 +12,11 @@ service-role key private; the Vercel Function uses it only on the server.
 
 ## 2. Connect the repository to Vercel
 
-Import the Git repository into Vercel. Vercel uses `vercel.json` to route
-application requests to the catch-all function in `api/`; static files are
-served from `public/`. The Node dependencies are installed from
-`package.json`.
+Import the Git repository into Vercel. `vercel.json` sets the framework preset
+to **Other** so Vercel does not mistake the local-development `app.py` for the
+deployment entrypoint. It also routes application requests to the catch-all
+function in `api/`; static files are served from `public/`. Node dependencies
+are installed from `package.json`.
 
 ## 3. Configure environment variables
 
