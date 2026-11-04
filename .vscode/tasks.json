@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Harborview locally (SQLite)",
+			"type": "shell",
+			"command": "$env:SECRET_KEY='local-development-only-secret-not-for-production-1234567890'; $env:DATABASE_BACKEND='sqlite'; $env:PORT='5000'; python app.py",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Create local Harborview admin",
+			"type": "shell",
+			"command": "$env:SECRET_KEY='local-development-only-secret-not-for-production-1234567890'; $env:DATABASE_BACKEND='sqlite'; python create_admin.py",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}
