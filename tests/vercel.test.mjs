@@ -76,6 +76,24 @@ test("adapts Vercel requests and responses to the application handler", async ()
   assert.match(headers["set-cookie"].join("; "), /HttpOnly/);
 });
 
+test("routes Vercel admin rewrites through the index function", async () => {
+  const req = Readable.from([]);
+  req.url = "/api/index?__path=%2Fadmin%2Flogin";
+  req.method = "GET";
+  req.headers = { host: "harborview.example", "x-forwarded-proto": "https" };
+  const res = {
+    setHeader() {},
+    end(body) {
+      this.body = body;
+    },
+  };
+
+  await vercelHandler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.match(res.body.toString(), /Admin Login/);
+});
+
 test("routes login and signup pages and rejects a POST without a CSRF token", async () => {
   const login = await app(new Request("https://harborview.example/login"));
   assert.equal(login.status, 200);
