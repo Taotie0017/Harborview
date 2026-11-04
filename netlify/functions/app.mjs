@@ -29,7 +29,12 @@ function db() {
 
 function secret() {
   const value = process.env.SECRET_KEY;
-  if (!value || value.length < 32) throw new Error("Set SECRET_KEY to a random value of at least 32 characters.");
+  if (!value) {
+    throw new Error("SECRET_KEY is missing from the Netlify Function runtime.");
+  }
+  if (value.length < 32) {
+    throw new Error("SECRET_KEY is available to the Function but has fewer than 32 characters.");
+  }
   return value;
 }
 
@@ -737,9 +742,21 @@ export default async (request, context) => {
     session = readSession(request);
     return await route(request, session);
   } catch (error) {
-    console.error("Harborview request failed:", error);
-    session ||= makeSession();
-    return response("<main><h1>Service temporarily unavailable</h1><p>Please try again shortly.</p></main>", session, request, 500);
+    const message = error instanceof Error ? error.message : "Unknown server error.";
+    console.error("Harborview request failed:", message);
+    const isSecretConfigurationError = message.startsWith("SECRET_KEY ");
+    const body = isSecretConfigurationError
+      ? `<main><h1>Server configuration error</h1><p>${escapeHtml(message)}</p><p>In Netlify, set SECRET_KEY for this site's Deploy Preview context with Functions scope, then create a new deploy.</p></main>`
+      : "<main><h1>Service temporarily unavailable</h1><p>Please try again shortly.</p></main>";
+    return new Response(body, {
+      status: 500,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "same-origin",
+      },
+    });
   }
 };
 

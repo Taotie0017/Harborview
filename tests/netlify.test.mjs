@@ -93,6 +93,31 @@ test("accepts a signed CSRF token and renders signup validation errors", async (
   assert.match(await result.text(), /at least 8 characters/);
 });
 
+test("reports a missing runtime secret without failing while generating an error response", async () => {
+  const secret = process.env.SECRET_KEY;
+  delete process.env.SECRET_KEY;
+  try {
+    const result = await handler(new Request("https://harborview.example/"));
+    assert.equal(result.status, 500);
+    assert.match(await result.text(), /SECRET_KEY is missing from the Netlify Function runtime/);
+    assert.equal(result.headers.has("set-cookie"), false);
+  } finally {
+    process.env.SECRET_KEY = secret;
+  }
+});
+
+test("distinguishes a short runtime secret from a missing one", async () => {
+  const secret = process.env.SECRET_KEY;
+  process.env.SECRET_KEY = "too-short";
+  try {
+    const result = await handler(new Request("https://harborview.example/"));
+    assert.equal(result.status, 500);
+    assert.match(await result.text(), /available to the Function but has fewer than 32 characters/);
+  } finally {
+    process.env.SECRET_KEY = secret;
+  }
+});
+
 test("registers root and catch-all Netlify function routes", () => {
   assert.deepEqual(config.path, ["/", "/*"]);
   assert.deepEqual(config.excludedPath, ["/static/*"]);
