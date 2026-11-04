@@ -1,8 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
+import { Readable } from "node:stream";
 
-import handler, { config, passwordHash, verifyPassword } from "../netlify/functions/app.mjs";
+import app, { passwordHash, verifyPassword } from "../lib/app.mjs";
+import vercelHandler, { config } from "../api/index.mjs";
 
 const password = "HarborviewTest123!";
 const werkzeugScryptHash = "scrypt:32768:8:1$hpHutzSNW8R1r8ql$02c58942ca56c79f7c13867c319275b3301d09de7eb19bfe709f31c22da45fc79fc32f92046c943389cc674f943835e1e0fc53c7b4b4e20de1b415a4c841d3bf";
@@ -45,19 +47,41 @@ test("creates a Werkzeug-compatible scrypt hash", () => {
   assert.equal(verifyPassword(password, hash), true);
 });
 
-test("serves the public homepage through the Netlify request handler", async () => {
-  const result = await handler(new Request("https://harborview.example/"));
+test("serves the public homepage through the application handler", async () => {
+  const result = await app(new Request("https://harborview.example/"));
   assert.equal(result.status, 200);
   assert.match(await result.text(), /Campus events, with a login that stays on record/);
   assert.match(result.headers.get("set-cookie"), /HttpOnly/);
 });
 
+test("adapts Vercel requests and responses to the application handler", async () => {
+  const req = Readable.from([]);
+  req.url = "/api/";
+  req.method = "GET";
+  req.headers = { host: "harborview.example", "x-forwarded-proto": "https" };
+  const headers = {};
+  const res = {
+    setHeader(name, value) {
+      headers[name.toLowerCase()] = value;
+    },
+    end(body) {
+      this.body = body;
+    },
+  };
+
+  await vercelHandler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.match(res.body.toString(), /Campus events, with a login that stays on record/);
+  assert.match(headers["set-cookie"].join("; "), /HttpOnly/);
+});
+
 test("routes login and signup pages and rejects a POST without a CSRF token", async () => {
-  const login = await handler(new Request("https://harborview.example/login"));
+  const login = await app(new Request("https://harborview.example/login"));
   assert.equal(login.status, 200);
   assert.match(await login.text(), /Student ID or email/);
 
-  const signup = await handler(new Request("https://harborview.example/signup", {
+  const signup = await app(new Request("https://harborview.example/signup", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: "full_name=Ada",
@@ -66,13 +90,13 @@ test("routes login and signup pages and rejects a POST without a CSRF token", as
 });
 
 test("accepts a signed CSRF token and renders signup validation errors", async () => {
-  const page = await handler(new Request("https://harborview.example/signup"));
+  const page = await app(new Request("https://harborview.example/signup"));
   const html = await page.text();
   const csrf = html.match(/name="csrf_token" value="([^"]+)"/)?.[1];
   const cookie = page.headers.get("set-cookie").split(";")[0];
   assert.ok(csrf);
 
-  const result = await handler(new Request("https://harborview.example/signup", {
+  const result = await app(new Request("https://harborview.example/signup", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -97,9 +121,9 @@ test("reports a missing runtime secret without failing while generating an error
   const secret = process.env.SECRET_KEY;
   delete process.env.SECRET_KEY;
   try {
-    const result = await handler(new Request("https://harborview.example/"));
+    const result = await app(new Request("https://harborview.example/"));
     assert.equal(result.status, 500);
-    assert.match(await result.text(), /SECRET_KEY is missing from the Netlify Function runtime/);
+    assert.match(await result.text(), /SECRET_KEY is missing from the Vercel Function runtime/);
     assert.equal(result.headers.has("set-cookie"), false);
   } finally {
     process.env.SECRET_KEY = secret;
@@ -110,7 +134,7 @@ test("distinguishes a short runtime secret from a missing one", async () => {
   const secret = process.env.SECRET_KEY;
   process.env.SECRET_KEY = "too-short";
   try {
-    const result = await handler(new Request("https://harborview.example/"));
+    const result = await app(new Request("https://harborview.example/"));
     assert.equal(result.status, 500);
     assert.match(await result.text(), /available to the Function but has fewer than 32 characters/);
   } finally {
@@ -118,7 +142,6 @@ test("distinguishes a short runtime secret from a missing one", async () => {
   }
 });
 
-test("registers root and catch-all Netlify function routes", () => {
-  assert.deepEqual(config.path, ["/", "/*"]);
-  assert.deepEqual(config.excludedPath, ["/static/*"]);
+test("disables Vercel's body parser to preserve form request streams", () => {
+  assert.deepEqual(config.api, { bodyParser: false });
 });
