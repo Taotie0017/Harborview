@@ -17,10 +17,6 @@ application requests to the catch-all function in `api/`; static files are
 served from `public/`. The Node dependencies are installed from
 `package.json`.
 
-To disconnect an existing Netlify project or remove its Git integration, open
-that site in Netlify and disconnect the repository in its site settings.
-Repository changes cannot revoke an account-level integration.
-
 ## 3. Configure environment variables
 
 Add these variables in the Vercel project's environment settings for
