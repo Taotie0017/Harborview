@@ -13,12 +13,7 @@ csrf = CSRFProtect()
 
 
 def create_app(test_config=None):
-    app = Flask(
-        __name__,
-        static_folder=None if os.environ.get("VERCEL") else "public/static",
-    )
-    if app.static_folder is None:
-        app.add_url_rule("/static/<path:filename>", endpoint="static", build_only=True)
+    app = Flask(__name__, static_folder="public/static")
     app.config.from_object(Config)
     if test_config:
         app.config.update(test_config)
@@ -93,10 +88,6 @@ def main():
     application = create_app()
     port = int(os.environ.get("PORT", "5000"))
     application.run(host="127.0.0.1", port=port, debug=application.config["DEBUG"])
-
-
-if os.environ.get("VERCEL"):
-    app = create_app()
 
 
 if __name__ == "__main__":

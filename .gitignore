@@ -1,8 +1,9 @@
 .env
 .env.*
 !.env.example
-.vercel/
+.netlify/
 .venv/
+node_modules/
 __pycache__/
 *.py[cod]
 .pytest_cache/
