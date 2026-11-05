@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { createServer } from "node:http";
 import { Readable } from "node:stream";
 
@@ -11,9 +12,41 @@ const werkzeugScryptHash = "scrypt:32768:8:1$hpHutzSNW8R1r8ql$02c58942ca56c79f7c
 const werkzeugPbkdf2Hash = "pbkdf2:sha256:600000$MlTyEYRFWIwEuCzS$f513959433188edcfca428ecfc57fc7945a3c1c01ac181b5a1f1ce0262a7dba2";
 let database;
 let databaseUrl;
+let mockEventFlow = false;
+let insertedEvent;
 
 test.before(async () => {
-  database = createServer((_request, result) => {
+  database = createServer(async (request, result) => {
+    const url = new URL(request.url, databaseUrl);
+    if (mockEventFlow && url.pathname === "/rest/v1/admins" && request.method === "GET") {
+      result.writeHead(200, {
+        "Content-Type": "application/json",
+        "Content-Range": "*/1",
+      });
+      result.end(JSON.stringify([{
+        id: 17,
+        full_name: "Test Administrator",
+        email: "office@example.com",
+        created_at: "2026-01-01 00:00:00",
+      }]));
+      return;
+    }
+    if (mockEventFlow && url.pathname === "/rest/v1/events" && request.method === "POST") {
+      const chunks = [];
+      for await (const chunk of request) chunks.push(chunk);
+      insertedEvent = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+      result.writeHead(201, {
+        "Content-Type": "application/json",
+        "Content-Range": "*/1",
+      });
+      result.end(JSON.stringify({ id: 42 }));
+      return;
+    }
+    if (mockEventFlow && url.pathname === "/rest/v1/admin_audit_logs" && request.method === "POST") {
+      result.writeHead(201, { "Content-Range": "*/1" });
+      result.end();
+      return;
+    }
     result.writeHead(200, {
       "Content-Type": "application/json",
       "Content-Range": "*/0",
@@ -114,6 +147,78 @@ test("routes the trailing-slash admin dashboard through the index function", asy
   assert.equal(res.statusCode, 303);
   assert.equal(headers.location, "/admin/login");
   assert.equal(res.body.toString(), "");
+});
+
+test("creates an event through the Vercel admin rewrite", async () => {
+  const session = {
+    csrf: "event-csrf-token",
+    role: "admin",
+    user_id: 17,
+    name: "Test Administrator",
+    expires: Math.floor(Date.now() / 1000) + 3600,
+  };
+  const payload = Buffer.from(JSON.stringify(session)).toString("base64url");
+  const signature = createHmac("sha256", process.env.SECRET_KEY)
+    .update(payload)
+    .digest("base64url");
+  const cookie = `harborview_session=${payload}.${signature}`;
+  const getRequest = Readable.from([]);
+  getRequest.url = "/api/index?__path=%2Fadmin%2Fevents%2Fnew&path=events%2Fnew";
+  getRequest.method = "GET";
+  getRequest.headers = {
+    host: "harborview.example",
+    "x-forwarded-proto": "https",
+    cookie,
+  };
+  const getResponse = {
+    setHeader() {},
+    end(body) {
+      this.body = body;
+    },
+  };
+  const form = new URLSearchParams({
+    csrf_token: session.csrf,
+    title: "Test Event",
+    description: "A test event for the Vercel submission path.",
+    location: "Main Hall",
+    event_date: "2026-12-01T10:00",
+    capacity: "25",
+  });
+  const req = Readable.from([Buffer.from(form.toString())]);
+  req.url = "/api/index?__path=%2Fadmin%2Fevents%2Fnew&path=events%2Fnew";
+  req.method = "POST";
+  req.headers = {
+    host: "harborview.example",
+    "x-forwarded-proto": "https",
+    "content-type": "application/x-www-form-urlencoded",
+    cookie,
+  };
+  const headers = {};
+  const res = {
+    setHeader(name, value) {
+      headers[name.toLowerCase()] = value;
+    },
+    end(body) {
+      this.body = body;
+    },
+  };
+
+  mockEventFlow = true;
+  insertedEvent = undefined;
+  try {
+    await vercelHandler(getRequest, getResponse);
+    await vercelHandler(req, res);
+  } finally {
+    mockEventFlow = false;
+  }
+
+  assert.equal(getResponse.statusCode, 200);
+  assert.match(getResponse.body.toString(), /Attendee capacity/);
+  assert.equal(res.statusCode, 303);
+  assert.equal(headers.location, "/admin/events");
+  assert.equal(insertedEvent.title, "Test Event");
+  assert.equal(insertedEvent.capacity, 25);
+  assert.equal(insertedEvent.created_by, 17);
 });
 
 test("routes login and signup pages and rejects a POST without a CSRF token", async () => {
