@@ -61,9 +61,16 @@ def register_student(values, password):
 
 def find_student(identifier):
     cleaned = identifier.strip()
-    return select_one("students", filters={"email": cleaned.lower()}) or select_one(
-        "students", filters={"student_id": cleaned.upper()}
+    filters = (
+        ({"email": cleaned.lower()}, {"student_id": cleaned.upper()})
+        if "@" in cleaned
+        else ({"student_id": cleaned.upper()}, {"email": cleaned.lower()})
     )
+    for student_filters in filters:
+        student = select_one("students", filters=student_filters)
+        if student:
+            return student
+    return None
 
 
 def recent_failure_count(identifier, student_id):

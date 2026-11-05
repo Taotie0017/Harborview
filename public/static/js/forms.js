@@ -28,7 +28,11 @@ document.querySelectorAll("[data-toggle-password]").forEach((button) => {
     }
     const showing = input.type === "text";
     input.type = showing ? "password" : "text";
-    button.textContent = showing ? "Show" : "Hide";
+    button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+    button.setAttribute("aria-pressed", String(!showing));
+    if (!button.querySelector("svg")) {
+      button.textContent = showing ? "Show" : "Hide";
+    }
   });
 });
 

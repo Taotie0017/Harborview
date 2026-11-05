@@ -23,7 +23,13 @@
         <label for="password">Password</label>
         <div class="password-field">
           <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128" placeholder="Enter your account password">
-          <button class="ghost" type="button" data-toggle-password="password">Show</button>
+          <button class="password-toggle" type="button" data-toggle-password="password" aria-label="Show password" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+              <path class="password-slash" d="m3 3 18 18"></path>
+            </svg>
+          </button>
         </div>
         {% if errors and errors.password %}<p class="field-error">{{ errors.password }}</p>{% endif %}
 

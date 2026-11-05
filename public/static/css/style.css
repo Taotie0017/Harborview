@@ -384,6 +384,34 @@ input:focus, select:focus, textarea:focus {
 
 .password-field input { flex: 1; }
 
+.password-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0;
+  cursor: pointer;
+}
+
+.password-toggle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.password-slash { display: none; }
+
+.password-toggle[aria-pressed="true"] .password-slash { display: block; }
+
 .ghost {
   border: 1px solid var(--ink);
   background: var(--paper);

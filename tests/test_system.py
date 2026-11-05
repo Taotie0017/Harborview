@@ -208,6 +208,21 @@ def test_student_can_register_and_password_is_hashed(client, app):
     assert "eventpass1" not in row["password_hash"]
 
 
+def test_student_id_login_sends_verification_to_registered_email(client):
+    client.post("/signup", data=STUDENT, follow_redirects=True)
+    complete_pending_email(client)
+    SENT_CODES.clear()
+
+    response = client.post(
+        "/login",
+        data={"identifier": STUDENT["student_id"], "password": STUDENT["password"]},
+        follow_redirects=True,
+    )
+
+    assert b"Confirm your sign-in" in response.data
+    assert set(SENT_CODES) == {STUDENT["email"]}
+
+
 def test_duplicate_email_is_rejected(client):
     client.post("/signup", data=STUDENT)
     again = dict(STUDENT)
