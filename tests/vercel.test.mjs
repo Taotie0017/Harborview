@@ -86,6 +86,8 @@ test("serves the public homepage through the application handler", async () => {
   const html = await result.text();
   assert.match(html, /Campus events, with a login that stays on record/);
   assert.match(html, /data-theme-toggle/);
+  assert.match(html, /aria-label="Switch to dark mode"/);
+  assert.match(html, /<svg viewBox="0 0 24 24"/);
   assert.match(html, /aria-controls="site-nav"/);
   assert.match(html, /harborview-theme/);
   assert.match(result.headers.get("set-cookie"), /HttpOnly/);

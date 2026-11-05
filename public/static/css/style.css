@@ -24,6 +24,7 @@
   --badge-bad-bg: #f8e6df;
   --badge-off-bg: #ece7df;
   --empty-bg: rgba(255, 253, 248, 0.7);
+  --page-glow: rgba(227, 178, 60, 0.28);
   --sidebar-bg: #1c1915;
   --sidebar-fg: #f7f1e8;
   --sidebar-hover-bg: #f4efe6;
@@ -34,35 +35,36 @@
 }
 
 html[data-theme="dark"] {
-  --ink: #f1eee8;
-  --paper: #171b1a;
-  --card: #232a27;
-  --pine: #3d9b70;
-  --pine-dark: #91d6b3;
-  --clay: #f0a184;
-  --gold: #d3a83c;
-  --line: #46504b;
-  --muted: #c1c8c3;
-  --ok: #91d6b3;
-  --bad: #f0a184;
-  --shadow: 5px 5px 0 #080b0a;
-  --header-bg: rgba(35, 42, 39, 0.96);
-  --input-bg: #171d1a;
-  --table-head-bg: #303a35;
-  --table-hover-bg: #303a35;
-  --flash-bg: #303a35;
-  --flash-success-bg: #203b2e;
-  --flash-error-bg: #482d26;
-  --flash-info-bg: #44391e;
-  --form-error-bg: #482d26;
-  --badge-ok-bg: #203b2e;
-  --badge-bad-bg: #482d26;
-  --badge-off-bg: #303a35;
-  --empty-bg: rgba(35, 42, 39, 0.7);
-  --sidebar-bg: #101412;
-  --sidebar-fg: #f1eee8;
-  --sidebar-hover-bg: #303a35;
-  --sidebar-hover-fg: #f1eee8;
+  --ink: #f4eff7;
+  --paper: #242125;
+  --card: #2B1C3D;
+  --pine: #8D6F9C;
+  --pine-dark: #d2b9df;
+  --clay: #c7a6d8;
+  --gold: #8D6F9C;
+  --line: #594667;
+  --muted: #c5b8cd;
+  --ok: #b7d5c1;
+  --bad: #e2aeb8;
+  --shadow: 5px 5px 0 #17151a;
+  --header-bg: rgba(43, 28, 61, 0.96);
+  --input-bg: #242125;
+  --table-head-bg: #38284a;
+  --table-hover-bg: #3b2b4d;
+  --flash-bg: #38284a;
+  --flash-success-bg: #293a32;
+  --flash-error-bg: #432d3a;
+  --flash-info-bg: #443653;
+  --form-error-bg: #432d3a;
+  --badge-ok-bg: #293a32;
+  --badge-bad-bg: #432d3a;
+  --badge-off-bg: #38284a;
+  --empty-bg: rgba(43, 28, 61, 0.7);
+  --page-glow: rgba(141, 111, 156, 0.22);
+  --sidebar-bg: #2B1C3D;
+  --sidebar-fg: #f4eff7;
+  --sidebar-hover-bg: #8D6F9C;
+  --sidebar-hover-fg: #fff;
   color-scheme: dark;
 }
 
@@ -75,7 +77,7 @@ body {
   min-height: 100vh;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(227, 178, 60, 0.28), transparent 32rem),
+    radial-gradient(circle at top left, var(--page-glow), transparent 32rem),
     var(--paper);
   font-family: var(--sans);
   font-size: 1.05rem;
@@ -171,14 +173,27 @@ p { margin: 0 0 0.8rem; }
 
 .theme-toggle {
   flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
   border: 1px solid var(--ink);
   background: var(--card);
   color: var(--ink);
-  padding: 0.45rem 0.7rem;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 650;
+  padding: 0.55rem;
   cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.theme-toggle svg {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .theme-toggle:hover { background: var(--table-hover-bg); }
@@ -557,7 +572,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .sidebar-theme-toggle {
-  width: 100%;
+  width: 2.75rem;
   margin: 1rem 0 0.75rem;
   border-color: currentColor;
   background: transparent;
@@ -654,7 +669,7 @@ input:focus, select:focus, textarea:focus {
   }
 
   .sidebar > form { display: inline-flex; margin: 0.5rem 0 0; }
-  .sidebar-theme-toggle { width: auto; margin: 0.5rem 0.5rem 0 0; }
+  .sidebar-theme-toggle { width: 2.65rem; margin: 0.5rem 0.5rem 0 0; }
   .admin-main { min-width: 0; padding: 1.2rem 1rem 2rem; }
 }
 
@@ -680,7 +695,10 @@ input:focus, select:focus, textarea:focus {
   .site-header { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 0.5rem; }
 
   .site-header .theme-toggle,
-  .nav-toggle { padding: 0.4rem 0.55rem; font-size: 0.85rem; }
+  .nav-toggle { height: 2.65rem; padding: 0.5rem; }
+
+  .site-header .theme-toggle { width: 2.65rem; }
+  .nav-toggle { width: auto; min-width: 2.65rem; }
 
   .site-nav > *,
   .site-nav .inline-form,
@@ -721,6 +739,8 @@ input:focus, select:focus, textarea:focus {
   .brand strong { font-size: 0.95rem; }
   .brand small { font-size: 0.62rem; }
   .site-header { gap: 0.35rem; padding-left: 0.7rem; padding-right: 0.7rem; }
-  .site-header .theme-toggle, .nav-toggle { padding: 0.35rem 0.4rem; font-size: 0.78rem; }
+  .site-header .theme-toggle,
+  .sidebar-theme-toggle { width: 2.4rem; height: 2.4rem; padding: 0.4rem; }
+  .nav-toggle { width: auto; min-width: 2.4rem; height: 2.4rem; padding: 0.35rem 0.4rem; }
   .admin-main { padding-left: 0.6rem; padding-right: 0.6rem; }
 }
