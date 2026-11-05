@@ -213,3 +213,5 @@ INSERT INTO events (title, description, location, event_date, created_at)
 SELECT 'Winter Concert on the Lawn', 'Blankets welcome. Moves to the auditorium if it rains.',
        'East Lawn', '2026-12-04 19:00', CURRENT_TIMESTAMP::TEXT
 WHERE NOT EXISTS (SELECT 1 FROM events WHERE title = 'Winter Concert on the Lawn');
+
+NOTIFY pgrst, 'reload schema';

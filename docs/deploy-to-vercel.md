@@ -10,8 +10,9 @@ JavaScript application.
 Run `schema_postgres.sql` in the Supabase SQL Editor before deploying. If this
 project already has the original schema, run the updated script again to add
 email verification, event capacity and waitlist tables, and the registration
-functions. Keep the Supabase service-role key private; the Vercel Function
-uses it only on the server.
+functions. The script asks PostgREST to reload its schema cache after applying
+the changes. Confirm the script completes without errors. Keep the Supabase
+service-role key private; the Vercel Function uses it only on the server.
 
 ## 2. Connect the repository to Vercel
 
