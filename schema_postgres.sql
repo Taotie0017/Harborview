@@ -74,6 +74,20 @@ CREATE TABLE IF NOT EXISTS event_participations (
     UNIQUE (event_id, student_id)
 );
 
+DELETE FROM events
+WHERE created_by IS NULL
+  AND (
+    (title = 'Welcome Week Club Fair'
+        AND description = 'Clubs, food stalls, and the event office booth.'
+        AND location = 'Main Quad' AND event_date = '2026-11-12 10:00')
+    OR (title = 'Career Night with Alumni'
+        AND description = 'Bring a student ID if you want a name tag.'
+        AND location = 'Student Center Hall B' AND event_date = '2026-11-18 18:00')
+    OR (title = 'Winter Concert on the Lawn'
+        AND description = 'Blankets welcome. Moves to the auditorium if it rains.'
+        AND location = 'East Lawn' AND event_date = '2026-12-04 19:00')
+  );
+
 CREATE INDEX IF NOT EXISTS idx_login_records_student ON login_records(student_id);
 CREATE INDEX IF NOT EXISTS idx_login_records_created ON login_records(created_at);
 CREATE INDEX IF NOT EXISTS idx_login_records_status_created
@@ -181,20 +195,5 @@ REVOKE ALL ON FUNCTION join_event(INTEGER, INTEGER) FROM PUBLIC, anon, authentic
 REVOKE ALL ON FUNCTION cancel_event_registration(INTEGER, INTEGER) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION join_event(INTEGER, INTEGER) TO service_role;
 GRANT EXECUTE ON FUNCTION cancel_event_registration(INTEGER, INTEGER) TO service_role;
-
-INSERT INTO events (title, description, location, event_date, created_at)
-SELECT 'Welcome Week Club Fair', 'Clubs, food stalls, and the event office booth.',
-       'Main Quad', '2026-11-12 10:00', CURRENT_TIMESTAMP::TEXT
-WHERE NOT EXISTS (SELECT 1 FROM events WHERE title = 'Welcome Week Club Fair');
-
-INSERT INTO events (title, description, location, event_date, created_at)
-SELECT 'Career Night with Alumni', 'Bring a student ID if you want a name tag.',
-       'Student Center Hall B', '2026-11-18 18:00', CURRENT_TIMESTAMP::TEXT
-WHERE NOT EXISTS (SELECT 1 FROM events WHERE title = 'Career Night with Alumni');
-
-INSERT INTO events (title, description, location, event_date, created_at)
-SELECT 'Winter Concert on the Lawn', 'Blankets welcome. Moves to the auditorium if it rains.',
-       'East Lawn', '2026-12-04 19:00', CURRENT_TIMESTAMP::TEXT
-WHERE NOT EXISTS (SELECT 1 FROM events WHERE title = 'Winter Concert on the Lawn');
 
 NOTIFY pgrst, 'reload schema';

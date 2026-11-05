@@ -78,7 +78,44 @@ def test_public_pages_load(client):
         response = client.get(path)
         assert response.status_code == 200
     home = client.get("/")
-    assert b"Welcome Week Club Fair" in home.data
+    assert b"No events posted yet." in home.data
+
+
+def test_database_initialization_removes_demo_events_but_keeps_other_events(tmp_path):
+    database_path = str(tmp_path / "existing.db")
+    config = {
+        "TESTING": True,
+        "WTF_CSRF_ENABLED": False,
+        "SECRET_KEY": "test-secret",
+        "DATABASE_BACKEND": "sqlite",
+        "DATABASE_PATH": database_path,
+    }
+    application = create_app(config)
+    with application.app_context():
+        execute(
+            """INSERT INTO events
+            (title,description,location,event_date,created_at)
+            VALUES (?,?,?,?,?)""",
+            (
+                "Welcome Week Club Fair",
+                "Clubs, food stalls, and the event office booth.",
+                "Main Quad",
+                "2026-11-12 10:00",
+                now(),
+            ),
+        )
+        execute(
+            """INSERT INTO events
+            (title,description,location,event_date,created_at)
+            VALUES (?,?,?,?,?)""",
+            ("My event", "Keep this event.", "Main Hall", "2026-12-01 10:00", now()),
+        )
+
+    create_app(config)
+    with application.app_context():
+        events = query_all("SELECT title FROM events ORDER BY title")
+
+    assert [event["title"] for event in events] == ["My event"]
 
 
 def test_signup_rejects_a_weak_password(client):

@@ -9,28 +9,6 @@ from supabase import create_client
 BASE_DIR = Path(__file__).resolve().parent
 SCHEMA_PATH = BASE_DIR / "schema.sql"
 
-SEED_EVENTS = [
-    (
-        "Welcome Week Club Fair",
-        "Clubs, food stalls, and the event office booth.",
-        "Main Quad",
-        "2026-11-12 10:00",
-    ),
-    (
-        "Career Night with Alumni",
-        "Bring a student ID if you want a name tag.",
-        "Student Center Hall B",
-        "2026-11-18 18:00",
-    ),
-    (
-        "Winter Concert on the Lawn",
-        "Blankets welcome. Moves to the auditorium if it rains.",
-        "East Lawn",
-        "2026-12-04 19:00",
-    ),
-]
-
-
 def now():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -78,15 +56,31 @@ def init_db(path=None):
         """
     )
     connection.execute("PRAGMA foreign_keys = ON")
-    count = connection.execute("SELECT COUNT(*) AS n FROM events").fetchone()["n"]
-    if count == 0:
-        connection.executemany(
-            """
-            INSERT INTO events (title, description, location, event_date, created_at)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            [(*event, now()) for event in SEED_EVENTS],
-        )
+    connection.execute(
+        """
+        DELETE FROM events
+        WHERE created_by IS NULL
+          AND (
+            (title = ? AND description = ? AND location = ? AND event_date = ?)
+            OR (title = ? AND description = ? AND location = ? AND event_date = ?)
+            OR (title = ? AND description = ? AND location = ? AND event_date = ?)
+          )
+        """,
+        (
+            "Welcome Week Club Fair",
+            "Clubs, food stalls, and the event office booth.",
+            "Main Quad",
+            "2026-11-12 10:00",
+            "Career Night with Alumni",
+            "Bring a student ID if you want a name tag.",
+            "Student Center Hall B",
+            "2026-11-18 18:00",
+            "Winter Concert on the Lawn",
+            "Blankets welcome. Moves to the auditorium if it rains.",
+            "East Lawn",
+            "2026-12-04 19:00",
+        ),
+    )
     connection.commit()
     connection.close()
 

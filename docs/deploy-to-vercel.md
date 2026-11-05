@@ -13,6 +13,8 @@ event capacity and waitlist tables and the registration functions. The script
 asks PostgREST to reload its schema cache after applying the changes. Confirm
 the script completes without errors. Keep the Supabase service-role key
 private; the Vercel Function uses it only on the server.
+The schema removes the three built-in demo events if they are still present
+and does not delete other events.
 
 ## 2. Connect the repository to Vercel
 
