@@ -83,7 +83,11 @@ test("creates a Werkzeug-compatible scrypt hash", () => {
 test("serves the public homepage through the application handler", async () => {
   const result = await app(new Request("https://harborview.example/"));
   assert.equal(result.status, 200);
-  assert.match(await result.text(), /Campus events, with a login that stays on record/);
+  const html = await result.text();
+  assert.match(html, /Campus events, with a login that stays on record/);
+  assert.match(html, /data-theme-toggle/);
+  assert.match(html, /aria-controls="site-nav"/);
+  assert.match(html, /harborview-theme/);
   assert.match(result.headers.get("set-cookie"), /HttpOnly/);
 });
 

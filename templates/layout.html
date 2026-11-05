@@ -6,6 +6,15 @@
   <title>{% block title %}Harborview Student Events{% endblock %}</title>
   <meta name="description" content="Sign in to the Harborview University student event office.">
   <link rel="icon" href="{{ url_for('static', filename='images/mark.svg') }}" type="image/svg+xml">
+  <script>
+    try {
+      const savedTheme = localStorage.getItem("harborview-theme");
+      document.documentElement.dataset.theme = savedTheme
+        || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    } catch {
+      document.documentElement.dataset.theme = "light";
+    }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,680&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">

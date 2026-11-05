@@ -28,6 +28,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="button button-ghost button-small" type="submit">Log out</button>
       </form>
+      <button class="theme-toggle sidebar-theme-toggle" type="button" data-theme-toggle aria-pressed="false">Dark mode</button>
     </aside>
     <div class="admin-main" id="content">
       {% include "partials/flashes.html" %}
