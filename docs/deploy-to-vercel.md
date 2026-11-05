@@ -41,7 +41,9 @@ changing environment variables.
 Students verify their email after signup and enter a fresh email code on each
 login. Verification codes expire after 10 minutes, allow five attempts, and can
 be resent once per minute. Configure a verified sender domain in Resend before
-enabling signups or student logins. Event capacity is set by the event office
+enabling signups or student logins. If Resend rejects a message, the signup or
+login form displays Resend's error so you can correct the sender or API-key
+configuration. Event capacity is set by the event office
 when creating or editing an event; additional students are waitlisted and
 promoted automatically when a registered student cancels.
 
