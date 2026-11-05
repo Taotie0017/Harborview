@@ -11,6 +11,10 @@
       "destination": "/api/index?__path=/admin"
     },
     {
+      "source": "/admin/",
+      "destination": "/api/index?__path=/admin/"
+    },
+    {
       "source": "/admin/:path*",
       "destination": "/api/index?__path=/admin/:path*"
     },

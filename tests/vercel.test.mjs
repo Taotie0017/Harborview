@@ -94,6 +94,28 @@ test("routes Vercel admin rewrites through the index function", async () => {
   assert.match(res.body.toString(), /Admin Login/);
 });
 
+test("routes the trailing-slash admin dashboard through the index function", async () => {
+  const req = Readable.from([]);
+  req.url = "/api/index?__path=%2Fadmin%2F";
+  req.method = "GET";
+  req.headers = { host: "harborview.example", "x-forwarded-proto": "https" };
+  const headers = {};
+  const res = {
+    setHeader(name, value) {
+      headers[name.toLowerCase()] = value;
+    },
+    end(body) {
+      this.body = body;
+    },
+  };
+
+  await vercelHandler(req, res);
+
+  assert.equal(res.statusCode, 303);
+  assert.equal(headers.location, "/admin/login");
+  assert.equal(res.body.toString(), "");
+});
+
 test("routes login and signup pages and rejects a POST without a CSRF token", async () => {
   const login = await app(new Request("https://harborview.example/login"));
   assert.equal(login.status, 200);
