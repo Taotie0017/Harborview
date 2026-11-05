@@ -2,7 +2,7 @@ import pytest
 from werkzeug.security import generate_password_hash
 
 from app import create_app
-from database import execute, now, query_all, query_one
+from database import execute, now, query_all, query_one, select_one
 from validators import validate_event, validate_student_edit
 
 STUDENT = {
@@ -14,6 +14,8 @@ STUDENT = {
     "password": "eventpass1",
     "confirm_password": "eventpass1",
 }
+
+SENT_CODES = {}
 
 
 @pytest.fixture
@@ -33,6 +35,30 @@ def app(tmp_path):
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def mock_email_delivery(monkeypatch):
+    SENT_CODES.clear()
+
+    def capture_email(recipient, _name, code, _purpose):
+        SENT_CODES[recipient] = code
+
+    monkeypatch.setattr("email_challenges.send_email", capture_email)
+
+
+def complete_pending_email(client):
+    with client.session_transaction() as browser_session:
+        student_id = browser_session.get("pending_email_student_id")
+    if student_id is None:
+        return None
+    with client.application.app_context():
+        student = select_one("students", filters={"id": student_id})
+    return client.post(
+        "/verify-email",
+        data={"code": SENT_CODES[student["email"]]},
+        follow_redirects=True,
+    )
 
 
 def test_app_rejects_placeholder_secret_key(tmp_path):
@@ -63,6 +89,21 @@ def login_student(client, identifier="HV-1001", password="eventpass1"):
         data={"identifier": identifier, "password": password},
         follow_redirects=True,
     )
+
+
+def login_student(client, identifier="HV-1001", password=STUDENT["password"]):
+    complete_pending_email(client)
+    response = client.post(
+        "/login",
+        data={"identifier": identifier, "password": password},
+        follow_redirects=True,
+    )
+    while True:
+        with client.session_transaction() as browser_session:
+            student_id = browser_session.get("pending_email_student_id")
+        if student_id is None:
+            return response
+        response = complete_pending_email(client)
 
 
 def login_admin(client):
@@ -117,13 +158,53 @@ def test_event_rejects_noncanonical_datetime():
     assert "event_date" in errors
 
 
+def test_event_capacity_must_be_a_positive_whole_number():
+    values, errors = validate_event(
+        {
+            "title": "Test event",
+            "description": "A valid event description.",
+            "location": "Main Hall",
+            "event_date": "2026-12-01T10:00",
+            "capacity": "2.5",
+        }
+    )
+    assert values["capacity"] == "2.5"
+    assert "capacity" in errors
+
+
+def test_admin_can_create_event_with_capacity(app):
+    add_admin(app)
+    office = app.test_client()
+    login_admin(office)
+    response = office.post(
+        "/admin/events/new",
+        data={
+            "title": "Capacity test",
+            "description": "A valid event description.",
+            "location": "Main Hall",
+            "event_date": "2026-12-01T10:00",
+            "capacity": "12",
+        },
+        follow_redirects=True,
+    )
+    assert b"Event posted" in response.data
+    with app.app_context():
+        event = query_one("SELECT capacity FROM events WHERE title = 'Capacity test'")
+    assert event["capacity"] == 12
+
+
 def test_student_can_register_and_password_is_hashed(client, app):
     response = client.post("/signup", data=STUDENT, follow_redirects=True)
     assert response.status_code == 200
-    assert b"Your account is ready" in response.data
+    assert b"Confirm your email" in response.data
+    complete_pending_email(client)
     with app.app_context():
-        row = query_one("SELECT password_hash FROM students WHERE email = ?", (STUDENT["email"],))
+        row = query_one(
+            "SELECT password_hash,email_verified FROM students WHERE email = ?",
+            (STUDENT["email"],),
+        )
     assert row["password_hash"] != STUDENT["password"]
+    assert row["email_verified"] == 1
     assert "eventpass1" not in row["password_hash"]
 
 
@@ -193,6 +274,58 @@ def test_anonymous_users_are_sent_to_the_right_login(client):
     assert "/login" in student_gate.headers["Location"]
     assert admin_gate.status_code == 302
     assert "/admin/login" in admin_gate.headers["Location"]
+
+
+def test_login_requires_an_email_code(client):
+    client.post("/signup", data=STUDENT)
+    complete_pending_email(client)
+    response = client.post(
+        "/login",
+        data={"identifier": "HV-1001", "password": STUDENT["password"]},
+        follow_redirects=True,
+    )
+    assert b"Confirm your sign-in" in response.data
+    verified = complete_pending_email(client)
+    assert b"Good" in verified.data
+
+
+def test_event_registration_waitlists_and_promotes_next_student(app):
+    with app.app_context():
+        ada_id = execute(
+            """INSERT INTO students
+            (full_name,student_id,email,department,year_level,password_hash,email_verified,is_active,created_at)
+            VALUES (?,?,?,?,?,?,?,?,?)""",
+            ("Ada Lovelace", "HV-1001", "ada@harborview.edu", "Computer Science", "2nd Year", "hash", 1, 1, now()),
+        )
+        grace_id = execute(
+            """INSERT INTO students
+            (full_name,student_id,email,department,year_level,password_hash,email_verified,is_active,created_at)
+            VALUES (?,?,?,?,?,?,?,?,?)""",
+            ("Grace Hopper", "HV-2002", "grace@harborview.edu", "Engineering", "4th Year", "hash", 1, 1, now()),
+        )
+        event_id = execute(
+            """INSERT INTO events (title,description,location,event_date,capacity,created_at)
+            VALUES (?,?,?,?,?,?)""",
+            ("Test event", "A test event.", "Main Hall", "2026-12-01 10:00", 1, now()),
+        )
+
+    ada = app.test_client()
+    grace = app.test_client()
+    for student_client, student_id, name in (
+        (ada, ada_id, "Ada Lovelace"),
+        (grace, grace_id, "Grace Hopper"),
+    ):
+        with student_client.session_transaction() as browser_session:
+            browser_session.update(role="student", user_id=student_id, name=name)
+
+    assert b"You are registered" in ada.post(
+        f"/events/{event_id}/register", follow_redirects=True
+    ).data
+    assert b"waitlist" in grace.post(
+        f"/events/{event_id}/register", follow_redirects=True
+    ).data.lower()
+    ada.post(f"/events/{event_id}/cancel", follow_redirects=True)
+    assert b"You are registered" in grace.get("/dashboard").data
 
 
 def test_admin_can_filter_edit_and_delete_records(app):

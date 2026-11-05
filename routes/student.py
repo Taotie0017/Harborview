@@ -1,8 +1,15 @@
 from datetime import datetime
 
-from flask import Blueprint, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
-from database import list_events, paged_rows, select_one, select_rows
+from database import (
+    cancel_event_registration,
+    paged_rows,
+    register_for_event,
+    select_one,
+    select_rows,
+    student_events,
+)
 from security import student_required
 
 student_bp = Blueprint("student", __name__)
@@ -47,11 +54,41 @@ def dashboard():
     return render_template(
         "student/dashboard.html",
         student=student,
-        events=list_events(),
+        events=student_events(student["id"]),
         login_count=login_count,
         last_login=last_login_rows[0]["created_at"] if last_login_rows else "No successful login yet",
         greeting=greeting(),
     )
+
+
+@student_bp.post("/events/<int:event_id>/register")
+@student_required
+def register_event(event_id):
+    student = load_student()
+    if student is None:
+        return redirect(url_for("public.login"))
+    status = register_for_event(event_id, student["id"])
+    if status == "not_found":
+        flash("That event is no longer available.", "error")
+    elif status == "registered":
+        flash("You are registered for the event.", "success")
+    elif status == "waitlisted":
+        flash("The event is full. You have been added to the waitlist.", "info")
+    return redirect(url_for("student.dashboard"))
+
+
+@student_bp.post("/events/<int:event_id>/cancel")
+@student_required
+def cancel_event(event_id):
+    student = load_student()
+    if student is None:
+        return redirect(url_for("public.login"))
+    status = cancel_event_registration(event_id, student["id"])
+    if status == "not_found":
+        flash("That event is no longer available.", "error")
+    elif status == "cancelled":
+        flash("Your event registration was cancelled.", "success")
+    return redirect(url_for("student.dashboard"))
 
 
 @student_bp.route("/my-logins")

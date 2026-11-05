@@ -112,6 +112,7 @@ def validate_event(form):
         "description": form.get("description", "").strip(),
         "location": form.get("location", "").strip(),
         "event_date": raw_date.replace("T", " "),
+        "capacity": form.get("capacity", "").strip(),
     }
     errors = {}
     if not 3 <= len(values["title"]) <= 120:
@@ -126,4 +127,11 @@ def validate_event(form):
             raise ValueError
     except ValueError:
         errors["event_date"] = "Choose a valid date and time."
+    try:
+        capacity = int(values["capacity"])
+        if not 1 <= capacity <= 100000:
+            raise ValueError
+        values["capacity"] = capacity
+    except ValueError:
+        errors["capacity"] = "Capacity must be a whole number between 1 and 100000."
     return values, errors

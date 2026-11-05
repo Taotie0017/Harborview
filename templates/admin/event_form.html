@@ -27,6 +27,10 @@
       <input id="location" name="location" required maxlength="120" value="{{ values.location or '' }}">
       {% if errors.location %}<p class="field-error">{{ errors.location }}</p>{% endif %}
 
+      <label for="capacity">Attendee capacity</label>
+      <input id="capacity" name="capacity" type="number" min="1" max="100000" required value="{{ values.capacity or 50 }}">
+      {% if errors.capacity %}<p class="field-error">{{ errors.capacity }}</p>{% endif %}
+
       <label for="description">Description</label>
       <textarea id="description" name="description" required maxlength="1000">{{ values.description or '' }}</textarea>
       {% if errors.description %}<p class="field-error">{{ errors.description }}</p>{% endif %}

@@ -20,6 +20,7 @@
             <th>When</th>
             <th>Title</th>
             <th>Location</th>
+            <th>Places</th>
             <th></th>
           </tr>
         </thead>
@@ -29,6 +30,7 @@
               <td>{{ event.event_date }}</td>
               <td>{{ event.title }}<br><small>{{ event.description }}</small></td>
               <td>{{ event.location }}</td>
+              <td>{{ event.registered_count }} / {{ event.capacity }}</td>
               <td>
                 <a href="{{ url_for('admin.edit_event', event_id=event.id) }}">Edit</a>
                 <form class="inline-form" method="post" action="{{ url_for('admin.delete_event', event_id=event.id) }}" data-confirm="Remove {{ event.title }} from the board?">

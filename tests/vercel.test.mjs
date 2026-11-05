@@ -157,6 +157,12 @@ test("accepts a signed CSRF token and renders signup validation errors", async (
   assert.match(await result.text(), /at least 8 characters/);
 });
 
+test("requires a pending student verification before opening the code form", async () => {
+  const result = await app(new Request("https://harborview.example/verify-email"));
+  assert.equal(result.status, 303);
+  assert.equal(result.headers.get("location"), "/login");
+});
+
 test("reports a missing runtime secret without failing while generating an error response", async () => {
   const secret = process.env.SECRET_KEY;
   delete process.env.SECRET_KEY;

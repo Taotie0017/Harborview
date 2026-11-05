@@ -36,6 +36,22 @@
             <p class="event-date">{{ event.event_date }} · {{ event.location }}</p>
             <h3>{{ event.title }}</h3>
             <p>{{ event.description }}</p>
+            <p>{{ event.registered_count }} of {{ event.capacity }} places filled.
+              {% if event.my_status == "registered" %}You are registered.
+              {% elif event.my_status == "waitlisted" %}You are on the waitlist.
+              {% endif %}
+            </p>
+            {% if event.my_status in ("registered", "waitlisted") %}
+              <form method="post" action="{{ url_for('student.cancel_event', event_id=event.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="button button-ghost" type="submit">Cancel</button>
+              </form>
+            {% else %}
+              <form method="post" action="{{ url_for('student.register_event', event_id=event.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="button" type="submit">Join event</button>
+              </form>
+            {% endif %}
           </li>
         {% else %}
           <li><p>The event office has not posted anything yet.</p></li>

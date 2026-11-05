@@ -108,7 +108,6 @@ def authenticate_student(identifier, password, ip_address, user_agent):
     if not check_password_hash(student["password_hash"], password):
         record_login(student, typed, "failed", ip_address, user_agent)
         return None, "invalid"
-    record_login(student, typed, "success", ip_address, user_agent)
     return student, "ok"
 
 

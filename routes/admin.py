@@ -9,6 +9,7 @@ from constants import DEPARTMENTS, YEAR_LEVELS
 from database import (
     add_audit,
     count_rows,
+    count_rows,
     delete_rows,
     insert_row,
     now,
@@ -401,6 +402,11 @@ def events():
     if require_admin() is None:
         return redirect(url_for("admin.login"))
     rows, _total = select_rows("events", order_by=(("event_date", False),))
+    for event in rows:
+        event["registered_count"] = count_rows(
+            "event_participations",
+            {"event_id": event["id"], "status": "registered"},
+        )
     return render_template("admin/events.html", events=rows)
 
 
@@ -422,6 +428,7 @@ def new_event():
                     "description": values["description"],
                     "location": values["location"],
                     "event_date": values["event_date"],
+                    "capacity": values["capacity"],
                     "created_by": admin["id"],
                     "created_at": now(),
                 },
@@ -452,6 +459,7 @@ def edit_event(event_id):
                     "description": values["description"],
                     "location": values["location"],
                     "event_date": values["event_date"],
+                    "capacity": values["capacity"],
                 },
                 {"id": event_id},
             )
@@ -464,6 +472,7 @@ def edit_event(event_id):
             "description": event["description"],
             "location": event["location"],
             "event_date": event["event_date"].replace(" ", "T"),
+            "capacity": event["capacity"],
         }
         errors = {}
     return render_template("admin/event_form.html", values=values, errors=errors, event=event)

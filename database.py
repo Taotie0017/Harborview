@@ -64,6 +64,28 @@ def init_db(path=None):
         path = database_path()
     connection = connect(path)
     connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+    student_columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(students)")
+    }
+    if "email_verified" not in student_columns:
+        connection.execute(
+            "ALTER TABLE students ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0"
+        )
+    event_columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(events)")
+    }
+    if "capacity" not in event_columns:
+        connection.execute(
+            "ALTER TABLE events ADD COLUMN capacity INTEGER NOT NULL DEFAULT 50"
+        )
+    connection.executescript(
+        """
+        CREATE INDEX IF NOT EXISTS idx_event_participations_event_status
+            ON event_participations(event_id, status, created_at);
+        CREATE INDEX IF NOT EXISTS idx_email_challenges_student_purpose
+            ON email_challenges(student_id, purpose, created_at DESC);
+        """
+    )
     connection.execute("PRAGMA foreign_keys = ON")
     count = connection.execute("SELECT COUNT(*) AS n FROM events").fetchone()["n"]
     if count == 0:
@@ -404,6 +426,150 @@ def add_audit(admin_id, action, target_table, target_id, details):
 def list_events():
     rows, _total = select_rows("events", order_by=(("event_date", False),))
     return rows
+
+
+def student_events(student_id):
+    events = list_events()
+    if not events:
+        return events
+
+    event_ids = [event["id"] for event in events]
+    if current_app.config.get("DATABASE_BACKEND", "sqlite") == "supabase":
+        participations = (
+            get_supabase()
+            .table("event_participations")
+            .select("event_id,student_id,status")
+            .in_("event_id", event_ids)
+            .execute()
+            .data
+            or []
+        )
+    else:
+        placeholders = ",".join("?" for _ in event_ids)
+        participations = [
+            dict(row)
+            for row in query_all(
+                f"SELECT event_id, student_id, status FROM event_participations WHERE event_id IN ({placeholders})",
+                event_ids,
+            )
+        ]
+
+    statuses = {
+        participation["event_id"]: participation["status"]
+        for participation in participations
+        if participation["student_id"] == student_id
+    }
+
+    for event in events:
+        event["registered_count"] = sum(
+            1
+            for participation in participations
+            if participation["event_id"] == event["id"]
+            and participation["status"] == "registered"
+        )
+        event["my_status"] = statuses.get(event["id"], "")
+    return events
+
+
+def register_for_event(event_id, student_id):
+    if current_app.config.get("DATABASE_BACKEND", "sqlite") == "supabase":
+        response = get_supabase().rpc(
+            "join_event", {"p_event_id": event_id, "p_student_id": student_id}
+        ).execute()
+        return response.data
+
+    connection = get_db()
+    connection.execute("BEGIN IMMEDIATE")
+    try:
+        event = connection.execute(
+            "SELECT capacity FROM events WHERE id = ?", (event_id,)
+        ).fetchone()
+        if event is None:
+            connection.rollback()
+            return "not_found"
+        existing = connection.execute(
+            "SELECT status FROM event_participations WHERE event_id = ? AND student_id = ?",
+            (event_id, student_id),
+        ).fetchone()
+        if existing and existing["status"] in ("registered", "waitlisted"):
+            connection.commit()
+            return existing["status"]
+        count = connection.execute(
+            "SELECT COUNT(*) AS n FROM event_participations WHERE event_id = ? AND status = 'registered'",
+            (event_id,),
+        ).fetchone()["n"]
+        status = "registered" if count < event["capacity"] else "waitlisted"
+        connection.execute(
+            """
+            INSERT INTO event_participations (event_id, student_id, status, created_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(event_id, student_id)
+            DO UPDATE SET status = excluded.status, created_at = excluded.created_at
+            """,
+            (event_id, student_id, status, now()),
+        )
+        connection.commit()
+        return status
+    except Exception:
+        connection.rollback()
+        raise
+
+
+def cancel_event_registration(event_id, student_id):
+    if current_app.config.get("DATABASE_BACKEND", "sqlite") == "supabase":
+        response = get_supabase().rpc(
+            "cancel_event_registration",
+            {"p_event_id": event_id, "p_student_id": student_id},
+        ).execute()
+        return response.data
+
+    connection = get_db()
+    connection.execute("BEGIN IMMEDIATE")
+    try:
+        event = connection.execute(
+            "SELECT capacity FROM events WHERE id = ?", (event_id,)
+        ).fetchone()
+        existing = connection.execute(
+            "SELECT status FROM event_participations WHERE event_id = ? AND student_id = ?",
+            (event_id, student_id),
+        ).fetchone()
+        if event is None:
+            connection.rollback()
+            return "not_found"
+        if existing is None or existing["status"] == "cancelled":
+            connection.rollback()
+            return "not_registered"
+        connection.execute(
+            "UPDATE event_participations SET status = 'cancelled' WHERE event_id = ? AND student_id = ?",
+            (event_id, student_id),
+        )
+        if existing["status"] == "registered":
+            count = connection.execute(
+                "SELECT COUNT(*) AS n FROM event_participations WHERE event_id = ? AND status = 'registered'",
+                (event_id,),
+            ).fetchone()["n"]
+            if count < event["capacity"]:
+                next_student = connection.execute(
+                    """
+                    SELECT student_id FROM event_participations
+                    WHERE event_id = ? AND status = 'waitlisted'
+                    ORDER BY created_at, id LIMIT 1
+                    """,
+                    (event_id,),
+                ).fetchone()
+                if next_student:
+                    connection.execute(
+                        """
+                        UPDATE event_participations SET status = 'registered'
+                        WHERE event_id = ? AND student_id = ?
+                        """,
+                        (event_id, next_student["student_id"]),
+                    )
+        connection.commit()
+        return "cancelled"
+    except Exception:
+        connection.rollback()
+        raise
 
 
 def page_window(page, per_page=10):

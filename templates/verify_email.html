@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Verify email · Harborview{% endblock %}
+{% block body_class %}page-auth{% endblock %}
+
+{% block content %}
+  <section class="auth-layout">
+    <div class="auth-card">
+      <p class="eyebrow">Email verification</p>
+      <h1>{% if purpose == "signup" %}Confirm your email{% else %}Confirm your sign-in{% endif %}</h1>
+      <p class="lede">Enter the 6-digit code sent to {{ student.email }}. Codes expire after 10 minutes.</p>
+      {% if errors and errors.form %}<p class="form-error">{{ errors.form }}</p>{% endif %}
+      <form class="stack-form" method="post" action="{{ url_for('public.verify_email') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="code">Verification code</label>
+        <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required>
+        {% if errors and errors.code %}<p class="field-error">{{ errors.code }}</p>{% endif %}
+        <button class="button" type="submit">Verify</button>
+      </form>
+      <form method="post" action="{{ url_for('public.resend_verification_email') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="button button-ghost" type="submit">Resend code</button>
+      </form>
+      <p class="form-note"><a href="{{ url_for('public.login') }}">Back to login</a></p>
+    </div>
+  </section>
+{% endblock %}

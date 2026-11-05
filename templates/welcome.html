@@ -28,6 +28,7 @@
             <p class="event-date">{{ event.event_date }} · {{ event.location }}</p>
             <h3>{{ event.title }}</h3>
             <p>{{ event.description }}</p>
+            <p>Capacity: {{ event.capacity }}</p>
           </li>
         {% else %}
           <li><p>No events posted yet.</p></li>
