@@ -29,7 +29,7 @@
       {% if errors.status %}<p class="field-error">{{ errors.status }}</p>{% endif %}
 
       <label for="note">Note</label>
-      <textarea id="note" name="note" maxlength="500">{{ values.note }}</textarea>
+      <textarea id="note" name="note" maxlength="500" placeholder="e.g. Corrected after reviewing the login record.">{{ values.note }}</textarea>
       {% if errors.note %}<p class="field-error">{{ errors.note }}</p>{% endif %}
 
       <button class="button" type="submit">Save record</button>

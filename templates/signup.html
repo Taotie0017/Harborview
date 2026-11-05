@@ -18,7 +18,7 @@
         {% endif %}
 
         <label for="full_name">Full name</label>
-        <input id="full_name" name="full_name" type="text" autocomplete="name" required maxlength="80" value="{{ values.full_name if values is defined and values else '' }}">
+        <input id="full_name" name="full_name" type="text" autocomplete="name" required maxlength="80" value="{{ values.full_name if values is defined and values else '' }}" placeholder="e.g. Ada Lovelace">
         {% if errors and errors.full_name %}<p class="field-error" data-for="full_name">{{ errors.full_name }}</p>{% else %}<p class="field-error" data-for="full_name"></p>{% endif %}
 
         <label for="student_id">Student ID</label>
@@ -26,7 +26,7 @@
         {% if errors and errors.student_id %}<p class="field-error" data-for="student_id">{{ errors.student_id }}</p>{% else %}<p class="field-error" data-for="student_id"></p>{% endif %}
 
         <label for="email">Email</label>
-        <input id="email" name="email" type="email" autocomplete="email" required maxlength="120" value="{{ values.email if values is defined and values else '' }}">
+        <input id="email" name="email" type="email" autocomplete="email" required maxlength="120" value="{{ values.email if values is defined and values else '' }}" placeholder="e.g. ada@example.com">
         {% if errors and errors.email %}<p class="field-error" data-for="email">{{ errors.email }}</p>{% else %}<p class="field-error" data-for="email"></p>{% endif %}
 
         <label for="department">Department</label>
@@ -49,13 +49,13 @@
 
         <label for="password">Password</label>
         <div class="password-field">
-          <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128">
+          <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128" placeholder="At least 8 characters">
           <button class="ghost" type="button" data-toggle-password="password">Show</button>
         </div>
         <p class="field-error" data-for="password">{% if errors and errors.password %}{{ errors.password }}{% endif %}</p>
 
         <label for="confirm_password">Confirm password</label>
-        <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required maxlength="128">
+        <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required maxlength="128" placeholder="Re-enter your password">
         <p class="field-error" data-for="confirm_password">{% if errors and errors.confirm_password %}{{ errors.confirm_password }}{% endif %}</p>
 
         <button class="button" type="submit">Create account</button>

@@ -16,23 +16,24 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <label for="title">Title</label>
-      <input id="title" name="title" required maxlength="120" value="{{ values.title or '' }}">
+      <input id="title" name="title" required maxlength="120" value="{{ values.title or '' }}" placeholder="e.g. Welcome Week Club Fair">
       {% if errors.title %}<p class="field-error">{{ errors.title }}</p>{% endif %}
 
       <label for="event_date">Date and time</label>
       <input id="event_date" name="event_date" type="datetime-local" required value="{{ (values.event_date or '')|replace(' ', 'T') }}">
+      <p class="form-note">Example: December 1, 2026 at 10:00 AM</p>
       {% if errors.event_date %}<p class="field-error">{{ errors.event_date }}</p>{% endif %}
 
       <label for="location">Location</label>
-      <input id="location" name="location" required maxlength="120" value="{{ values.location or '' }}">
+      <input id="location" name="location" required maxlength="120" value="{{ values.location or '' }}" placeholder="e.g. Main Quad">
       {% if errors.location %}<p class="field-error">{{ errors.location }}</p>{% endif %}
 
       <label for="capacity">Attendee capacity</label>
-      <input id="capacity" name="capacity" type="number" min="1" max="100000" required value="{{ values.capacity or 50 }}">
+      <input id="capacity" name="capacity" type="number" min="1" max="100000" required value="{{ values.capacity or 50 }}" placeholder="e.g. 50">
       {% if errors.capacity %}<p class="field-error">{{ errors.capacity }}</p>{% endif %}
 
       <label for="description">Description</label>
-      <textarea id="description" name="description" required maxlength="1000">{{ values.description or '' }}</textarea>
+      <textarea id="description" name="description" required maxlength="1000" placeholder="e.g. Join us for clubs, food stalls, and campus activities.">{{ values.description or '' }}</textarea>
       {% if errors.description %}<p class="field-error">{{ errors.description }}</p>{% endif %}
 
       <button class="button" type="submit">{{ "Save event" if event else "Post event" }}</button>

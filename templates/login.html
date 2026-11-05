@@ -17,12 +17,12 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% endif %}
         <label for="identifier">Student ID or email</label>
-        <input id="identifier" name="identifier" type="text" autocomplete="username" required maxlength="120" value="{{ identifier or '' }}">
+        <input id="identifier" name="identifier" type="text" autocomplete="username" required maxlength="120" value="{{ identifier or '' }}" placeholder="e.g. HV-1001 or ada@example.com">
         {% if errors and errors.identifier %}<p class="field-error">{{ errors.identifier }}</p>{% endif %}
 
         <label for="password">Password</label>
         <div class="password-field">
-          <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128">
+          <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128" placeholder="Enter your account password">
           <button class="ghost" type="button" data-toggle-password="password">Show</button>
         </div>
         {% if errors and errors.password %}<p class="field-error">{{ errors.password }}</p>{% endif %}
