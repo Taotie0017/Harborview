@@ -9,10 +9,10 @@ JavaScript application.
 
 Run `schema_postgres.sql` in the Supabase SQL Editor before deploying. If this
 project already has the original schema, run the updated script again to add
-email verification, event capacity and waitlist tables, and the registration
-functions. The script asks PostgREST to reload its schema cache after applying
-the changes. Confirm the script completes without errors. Keep the Supabase
-service-role key private; the Vercel Function uses it only on the server.
+event capacity and waitlist tables and the registration functions. The script
+asks PostgREST to reload its schema cache after applying the changes. Confirm
+the script completes without errors. Keep the Supabase service-role key
+private; the Vercel Function uses it only on the server.
 
 ## 2. Connect the repository to Vercel
 
@@ -32,24 +32,14 @@ production and any preview deployments that need database access:
 | `SECRET_KEY` | A long, random session-signing secret (at least 32 characters) |
 | `SUPABASE_URL` | The Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | The Supabase service-role key |
-| `RESEND_API_KEY` | A Resend API key authorized to send email |
-| `EMAIL_FROM` | A sender address on a domain verified with Resend, e.g. `Harborview <no-reply@example.com>` |
 
 Never put these values in `public/` or commit them to Git. Redeploy after
 changing environment variables.
 
-Students verify their email after signup and enter a fresh email code on each
-login. Logging in with a student ID sends the code to the email address saved
-on that account. Verification codes expire after 10 minutes, allow five
-attempts, and can be resent once per minute. Configure a verified sender
-domain in Resend before enabling signups or student logins. If Resend rejects
-a message, the signup or login form displays Resend's error so you can correct
-the sender or API-key configuration. Event capacity is set by the event office
+Students can sign in immediately after creating an account using their student
+ID or email and password. Event capacity is set by the event office
 when creating or editing an event; additional students are waitlisted and
 promoted automatically when a registered student cancels.
-
-For local Flask development, add `RESEND_API_KEY` and `EMAIL_FROM` to the
-ignored root `.env` file as well.
 
 ## 4. Create an administrator
 

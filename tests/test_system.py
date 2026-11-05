@@ -2,7 +2,7 @@ import pytest
 from werkzeug.security import generate_password_hash
 
 from app import create_app
-from database import execute, now, query_all, query_one, select_one
+from database import execute, now, query_all, query_one
 from validators import validate_event, validate_student_edit
 
 STUDENT = {
@@ -14,9 +14,6 @@ STUDENT = {
     "password": "eventpass1",
     "confirm_password": "eventpass1",
 }
-
-SENT_CODES = {}
-
 
 @pytest.fixture
 def app(tmp_path):
@@ -35,30 +32,6 @@ def app(tmp_path):
 @pytest.fixture
 def client(app):
     return app.test_client()
-
-
-@pytest.fixture(autouse=True)
-def mock_email_delivery(monkeypatch):
-    SENT_CODES.clear()
-
-    def capture_email(recipient, _name, code, _purpose):
-        SENT_CODES[recipient] = code
-
-    monkeypatch.setattr("email_challenges.send_email", capture_email)
-
-
-def complete_pending_email(client):
-    with client.session_transaction() as browser_session:
-        student_id = browser_session.get("pending_email_student_id")
-    if student_id is None:
-        return None
-    with client.application.app_context():
-        student = select_one("students", filters={"id": student_id})
-    return client.post(
-        "/verify-email",
-        data={"code": SENT_CODES[student["email"]]},
-        follow_redirects=True,
-    )
 
 
 def test_app_rejects_placeholder_secret_key(tmp_path):
@@ -83,27 +56,13 @@ def add_admin(app, email="office@harborview.edu", password="officepass1"):
         )
 
 
-def login_student(client, identifier="HV-1001", password="eventpass1"):
+def login_student(client, identifier="HV-1001", password=STUDENT["password"]):
+    client.post("/logout")
     return client.post(
         "/login",
         data={"identifier": identifier, "password": password},
         follow_redirects=True,
     )
-
-
-def login_student(client, identifier="HV-1001", password=STUDENT["password"]):
-    complete_pending_email(client)
-    response = client.post(
-        "/login",
-        data={"identifier": identifier, "password": password},
-        follow_redirects=True,
-    )
-    while True:
-        with client.session_transaction() as browser_session:
-            student_id = browser_session.get("pending_email_student_id")
-        if student_id is None:
-            return response
-        response = complete_pending_email(client)
 
 
 def login_admin(client):
@@ -196,35 +155,36 @@ def test_admin_can_create_event_with_capacity(app):
 def test_student_can_register_and_password_is_hashed(client, app):
     response = client.post("/signup", data=STUDENT, follow_redirects=True)
     assert response.status_code == 200
-    assert b"Confirm your email" in response.data
-    complete_pending_email(client)
+    assert b"Student dashboard" in response.data
+    with client.session_transaction() as browser_session:
+        assert browser_session["role"] == "student"
     with app.app_context():
         row = query_one(
-            "SELECT password_hash,email_verified FROM students WHERE email = ?",
+            "SELECT password_hash FROM students WHERE email = ?",
             (STUDENT["email"],),
         )
     assert row["password_hash"] != STUDENT["password"]
-    assert row["email_verified"] == 1
     assert "eventpass1" not in row["password_hash"]
 
 
-def test_student_id_login_sends_verification_to_registered_email(client):
-    client.post("/signup", data=STUDENT, follow_redirects=True)
-    complete_pending_email(client)
-    SENT_CODES.clear()
-
+def test_student_id_login_works_without_email_verification(client):
+    client.post("/signup", data=STUDENT)
+    client.post("/logout")
     response = client.post(
         "/login",
         data={"identifier": STUDENT["student_id"], "password": STUDENT["password"]},
         follow_redirects=True,
     )
 
-    assert b"Confirm your sign-in" in response.data
-    assert set(SENT_CODES) == {STUDENT["email"]}
+    assert b"Student dashboard" in response.data
+    with client.session_transaction() as browser_session:
+        assert browser_session["role"] == "student"
+    assert client.get("/verify-email").status_code == 404
 
 
 def test_duplicate_email_is_rejected(client):
     client.post("/signup", data=STUDENT)
+    client.post("/logout")
     again = dict(STUDENT)
     again["student_id"] = "HV-1002"
     response = client.post("/signup", data=again)
@@ -233,6 +193,7 @@ def test_duplicate_email_is_rejected(client):
 
 def test_login_records_success_and_failure(client, app):
     client.post("/signup", data=STUDENT)
+    client.post("/logout")
     bad = client.post("/login", data={"identifier": "HV-1001", "password": "wrongpass1"})
     assert b"not right" in bad.data
     good = login_student(client)
@@ -291,32 +252,19 @@ def test_anonymous_users_are_sent_to_the_right_login(client):
     assert "/admin/login" in admin_gate.headers["Location"]
 
 
-def test_login_requires_an_email_code(client):
-    client.post("/signup", data=STUDENT)
-    complete_pending_email(client)
-    response = client.post(
-        "/login",
-        data={"identifier": "HV-1001", "password": STUDENT["password"]},
-        follow_redirects=True,
-    )
-    assert b"Confirm your sign-in" in response.data
-    verified = complete_pending_email(client)
-    assert b"Good" in verified.data
-
-
 def test_event_registration_waitlists_and_promotes_next_student(app):
     with app.app_context():
         ada_id = execute(
             """INSERT INTO students
-            (full_name,student_id,email,department,year_level,password_hash,email_verified,is_active,created_at)
-            VALUES (?,?,?,?,?,?,?,?,?)""",
-            ("Ada Lovelace", "HV-1001", "ada@harborview.edu", "Computer Science", "2nd Year", "hash", 1, 1, now()),
+            (full_name,student_id,email,department,year_level,password_hash,is_active,created_at)
+            VALUES (?,?,?,?,?,?,?,?)""",
+            ("Ada Lovelace", "HV-1001", "ada@harborview.edu", "Computer Science", "2nd Year", "hash", 1, now()),
         )
         grace_id = execute(
             """INSERT INTO students
-            (full_name,student_id,email,department,year_level,password_hash,email_verified,is_active,created_at)
-            VALUES (?,?,?,?,?,?,?,?,?)""",
-            ("Grace Hopper", "HV-2002", "grace@harborview.edu", "Engineering", "4th Year", "hash", 1, 1, now()),
+            (full_name,student_id,email,department,year_level,password_hash,is_active,created_at)
+            VALUES (?,?,?,?,?,?,?,?)""",
+            ("Grace Hopper", "HV-2002", "grace@harborview.edu", "Engineering", "4th Year", "hash", 1, now()),
         )
         event_id = execute(
             """INSERT INTO events (title,description,location,event_date,capacity,created_at)
@@ -348,6 +296,7 @@ def test_admin_can_filter_edit_and_delete_records(app):
     student = app.test_client()
     office = app.test_client()
     student.post("/signup", data=STUDENT)
+    student.post("/logout")
     other = dict(STUDENT)
     other.update(
         {
@@ -402,6 +351,7 @@ def test_admin_can_filter_edit_and_delete_records(app):
 
 def test_failed_logins_lock_after_five_tries(client):
     client.post("/signup", data=STUDENT)
+    client.post("/logout")
     last = None
     for _ in range(6):
         last = client.post("/login", data={"identifier": "HV-1001", "password": "wrongpass1"})

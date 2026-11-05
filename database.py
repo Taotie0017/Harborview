@@ -64,13 +64,6 @@ def init_db(path=None):
         path = database_path()
     connection = connect(path)
     connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
-    student_columns = {
-        row["name"] for row in connection.execute("PRAGMA table_info(students)")
-    }
-    if "email_verified" not in student_columns:
-        connection.execute(
-            "ALTER TABLE students ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0"
-        )
     event_columns = {
         row["name"] for row in connection.execute("PRAGMA table_info(events)")
     }
@@ -82,8 +75,6 @@ def init_db(path=None):
         """
         CREATE INDEX IF NOT EXISTS idx_event_participations_event_status
             ON event_participations(event_id, status, created_at);
-        CREATE INDEX IF NOT EXISTS idx_email_challenges_student_purpose
-            ON email_challenges(student_id, purpose, created_at DESC);
         """
     )
     connection.execute("PRAGMA foreign_keys = ON")

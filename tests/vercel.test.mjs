@@ -14,8 +14,9 @@ let database;
 let databaseUrl;
 let mockEventFlow = false;
 let mockStudentLogin = false;
+let mockStudentExists = false;
 let insertedEvent;
-let verificationEmailRecipient;
+let insertedStudent;
 
 test.before(async () => {
   database = createServer(async (request, result) => {
@@ -50,14 +51,16 @@ test.before(async () => {
       return;
     }
     if (mockStudentLogin && url.pathname === "/rest/v1/students" && request.method === "GET") {
-      const student = url.searchParams.get("student_id") === "eq.HV-1001"
+      const student = mockStudentExists && (
+        url.searchParams.get("student_id") === "eq.HV-1001"
+        || url.searchParams.get("id") === "eq.42"
+        || url.searchParams.get("email") === "eq.ada@example.com")
         ? [{
           id: 42,
           full_name: "Ada Lovelace",
           student_id: "HV-1001",
           email: "ada@example.com",
           password_hash: passwordHash(password),
-          email_verified: true,
           is_active: true,
         }]
         : [];
@@ -68,23 +71,16 @@ test.before(async () => {
       result.end(JSON.stringify(student));
       return;
     }
-    if (mockStudentLogin && url.pathname === "/rest/v1/email_challenges") {
-      if (request.method === "POST") {
-        for await (const _chunk of request) {
-          // Drain the request body before responding.
-        }
-        result.writeHead(201, {
-          "Content-Type": "application/json",
-          "Content-Range": "*/1",
-        });
-        result.end(JSON.stringify({ id: 77 }));
-        return;
-      }
-      result.writeHead(request.method === "DELETE" ? 204 : 200, {
+    if (mockStudentLogin && url.pathname === "/rest/v1/students" && request.method === "POST") {
+      const chunks = [];
+      for await (const chunk of request) chunks.push(chunk);
+      insertedStudent = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+      mockStudentExists = true;
+      result.writeHead(201, {
         "Content-Type": "application/json",
-        "Content-Range": "*/0",
+        "Content-Range": "*/1",
       });
-      result.end(request.method === "DELETE" ? undefined : "[]");
+      result.end();
       return;
     }
     result.writeHead(200, {
@@ -308,7 +304,45 @@ test("accepts a signed CSRF token and renders signup validation errors", async (
   assert.match(await result.text(), /at least 8 characters/);
 });
 
-test("student ID login sends a verification email to the registered address", async () => {
+test("signup creates an account and signs in without email configuration", async () => {
+  const page = await app(new Request("https://harborview.example/signup"));
+  const html = await page.text();
+  const csrf = html.match(/name="csrf_token" value="([^"]+)"/)?.[1];
+  const cookie = page.headers.get("set-cookie").split(";")[0];
+  assert.ok(csrf);
+
+  mockStudentLogin = true;
+  mockStudentExists = false;
+  insertedStudent = undefined;
+  try {
+    const result = await app(new Request("https://harborview.example/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Cookie: cookie,
+      },
+      body: new URLSearchParams({
+        csrf_token: csrf,
+        full_name: "Ada Lovelace",
+        student_id: "HV-1001",
+        email: "ada@example.com",
+        department: "Computer Science",
+        year_level: "2nd Year",
+        password,
+        confirm_password: password,
+      }),
+    }));
+    assert.equal(result.status, 303, await result.text());
+    assert.equal(result.headers.get("location"), "/dashboard");
+    assert.equal(insertedStudent.student_id, "HV-1001");
+    assert.equal("email_verified" in insertedStudent, false);
+  } finally {
+    mockStudentLogin = false;
+    mockStudentExists = false;
+  }
+});
+
+test("student ID login completes without calling email verification", async () => {
   const page = await app(new Request("https://harborview.example/login"));
   const html = await page.text();
   const csrf = html.match(/name="csrf_token" value="([^"]+)"/)?.[1];
@@ -316,21 +350,8 @@ test("student ID login sends a verification email to the registered address", as
   assert.ok(csrf);
   assert.match(html, /class="password-toggle"/);
 
-  const oldFetch = globalThis.fetch;
-  const oldApiKey = process.env.RESEND_API_KEY;
-  const oldSender = process.env.EMAIL_FROM;
-  process.env.RESEND_API_KEY = "test-resend-key";
-  process.env.EMAIL_FROM = "Harborview <no-reply@example.com>";
-  verificationEmailRecipient = undefined;
   mockStudentLogin = true;
-  globalThis.fetch = async (url, options) => {
-    if (String(url) === "https://api.resend.com/emails") {
-      verificationEmailRecipient = JSON.parse(options.body).to;
-      return new Response(null, { status: 200 });
-    }
-    return oldFetch(url, options);
-  };
-
+  mockStudentExists = true;
   try {
     const result = await app(new Request("https://harborview.example/login", {
       method: "POST",
@@ -345,22 +366,16 @@ test("student ID login sends a verification email to the registered address", as
       }),
     }));
     assert.equal(result.status, 303);
-    assert.equal(result.headers.get("location"), "/verify-email");
-    assert.deepEqual(verificationEmailRecipient, ["ada@example.com"]);
+    assert.equal(result.headers.get("location"), "/dashboard");
   } finally {
     mockStudentLogin = false;
-    globalThis.fetch = oldFetch;
-    if (oldApiKey === undefined) delete process.env.RESEND_API_KEY;
-    else process.env.RESEND_API_KEY = oldApiKey;
-    if (oldSender === undefined) delete process.env.EMAIL_FROM;
-    else process.env.EMAIL_FROM = oldSender;
+    mockStudentExists = false;
   }
 });
 
-test("requires a pending student verification before opening the code form", async () => {
+test("verification routes are no longer available", async () => {
   const result = await app(new Request("https://harborview.example/verify-email"));
-  assert.equal(result.status, 303);
-  assert.equal(result.headers.get("location"), "/login");
+  assert.equal(result.status, 404);
 });
 
 test("reports a missing runtime secret without failing while generating an error response", async () => {

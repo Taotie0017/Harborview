@@ -45,8 +45,7 @@ python app.py
 ```
 
 Open `http://127.0.0.1:5000`. Keep real secrets in your local, ignored `.env`
-file; do not commit them. Configure Resend credentials and a verified sender
-address if you want to test email verification.
+file; do not commit them.
 
 ## Deploy to Vercel
 
